@@ -22,7 +22,8 @@ gh release upload $tag reports\EAKP_Stage8_Live_Evidence_*.zip --clobber
 gh release upload $tag presentation\EAKP_OTUS_Defense_Stage8_UA.pptx --clobber
 ```
 
-Або один крок: `powershell -File scripts\publish_stage8_evidence.ps1`
+Або один крок (verify → bundle → upload із перевіркою exit code): `powershell -File scripts\publish_stage8_evidence.ps1`  
+Bundle записує шлях у `reports/last_evidence_bundle.txt` — publish використовує **лише цей** ZIP, не найновіший за датою з папки.
 
 **Windows:** якщо `create-user` падає через stderr Docker — оновлений `demo_from_zero.ps1` (EAP + `'create-user'`). RAG eval: при `502` між кейсами є пауза `--case-delay 2` (навантаження Ollama).
 

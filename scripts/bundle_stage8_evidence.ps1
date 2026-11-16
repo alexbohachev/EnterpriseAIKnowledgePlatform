@@ -91,4 +91,10 @@ foreach ($rel in $paths) {
 if (Test-Path $zip) { Remove-Item $zip -Force }
 Compress-Archive -Path (Join-Path $staging '*') -DestinationPath $zip -CompressionLevel Optimal
 Remove-Item $staging -Recurse -Force
+if (-not (Test-Path $zip)) {
+    throw "Bundle failed: ZIP was not created at $zip"
+}
+$marker = Join-Path $root 'reports\last_evidence_bundle.txt'
+Set-Content -Path $marker -Value $zip -Encoding utf8
 Write-Host "Created: $zip (git $commit)"
+Write-Output $zip
