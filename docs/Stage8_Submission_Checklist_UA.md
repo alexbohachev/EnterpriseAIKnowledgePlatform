@@ -23,14 +23,18 @@
 
 Перевірка: `python scripts/stage8_preflight.py` → поля `live_rag_eval`, `live_rag_bob_acl`, `live_load_query_report` = `PASS`.
 
-Перегенерація RAG eval (потрібні токени й уже проіндексовані синтетичні документи):
+**Розширений набір (faithfulness):** `scripts/seed_synthetic_eval_corpus.py` → `reports/eval_active_alice.jsonl` (8 кейсів) і `eval_active_bob.jsonl` (4 кейси). Поля: `must_not_include`, `require_citation_marks`, `min_citations`. Див. `examples/EVAL_DATASETS_UA.md`.
+
+Автоматичний прогін: `scripts/demo_from_zero.ps1` / `demo_from_zero.sh` (читає `scripts/demo_env.example`).
+
+Окремо RAG eval:
 ```bash
 set EAKP_EVAL_TOKEN=...   # Alice
-python scripts/evaluate_rag.py --dataset examples/eval_live_synthetic.jsonl --output reports/rag_eval.json
+python scripts/evaluate_rag.py --dataset reports/eval_active_alice.jsonl --output reports/rag_eval.json
 set EAKP_EVAL_TOKEN=...   # Bob
-python scripts/evaluate_rag.py --dataset examples/eval_live_bob_acl.jsonl --output reports/rag_eval_bob_acl.json
+python scripts/evaluate_rag.py --dataset reports/eval_active_bob.jsonl --output reports/rag_eval_bob_acl.json
 ```
-Скрипт завершується кодом **2**, якщо провалені recall, abstain, `must_include` або `--min-quality-pass-rate` (за замовчуванням `1.0`).
+У звіті також `faithfulness_pass_rate`. Exit code **2** при провалі quality/faithfulness або `--min-quality-pass-rate`.
 
 ## Live Docker — підтверджено на стенді (синтетичні дані)
 - [x] Postgres + Qdrant + Neo4j + Ollama + api/worker/indexer
@@ -43,6 +47,8 @@ python scripts/evaluate_rag.py --dataset examples/eval_live_bob_acl.jsonl --outp
 - [x] Скріни: `reports/screenshots/` (Grafana, Jaeger; Swagger за потреби — з браузера)
 
 ## Досі OPEN (не стверджувати без доказів)
+Детально: `docs/Stage8_Open_Requirements_UA.md`; машиночитний реєстр: `python scripts/open_requirements_register.py`.
+
 - [ ] Формальний air-gap audit (egress, образи, DNS)
 - [ ] GPU tokens/s, повний inference benchmark
 - [ ] Pen-test / adversarial corpus з незалежною перевіркою

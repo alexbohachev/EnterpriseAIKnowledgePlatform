@@ -111,6 +111,32 @@ def test_rag_evaluation_uses_only_explicit_ground_truth_not_guessing():
     assert 'Not an automated' in data['limitations']
 
 
+def test_rag_evaluation_faithfulness_forbidden_text_and_citation_marks():
+    script = load_script('evaluate_rag.py')
+    case = {
+        'id': 'faith',
+        'question': 'When?',
+        'expected_doc_ids': ['doc1'],
+        'must_include': ['2031'],
+        'must_not_include': ['2032'],
+        'require_citation_marks': True,
+        'min_citations': 1,
+    }
+    ok = script.evaluate_cases([case], lambda _: {
+        'answer': 'Launch 2031 [S1]',
+        'retrieval_count': 1,
+        'citations': [{'source': 'S1', 'document_id': 'doc1'}],
+    })
+    assert ok['faithfulness_pass_rate'] == 1
+    bad = script.evaluate_cases([case], lambda _: {
+        'answer': 'Wrong 2032 [S1]',
+        'retrieval_count': 1,
+        'citations': [{'source': 'S1', 'document_id': 'doc1'}],
+    })
+    assert bad['faithfulness_pass_rate'] == 0
+    assert bad['quality_failures'] == 1
+
+
 def test_rag_evaluation_detects_unsupported_citation_label():
     script = load_script('evaluate_rag.py')
     data = script.evaluate_cases([{'id':'bad','question':'Check','expected_doc_ids':['doc1']}],

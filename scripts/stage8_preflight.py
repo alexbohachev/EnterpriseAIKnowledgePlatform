@@ -35,11 +35,14 @@ def _rag_eval_ok(path: Path, min_pass_rate: float = 1.0) -> bool:
         rate = body.get('quality_pass_rate')
         if rate is None and body.get('completed', 0) > 0:
             rate = 1.0 - (body.get('quality_failures', 0) / body['completed'])
+        faith = body.get('faithfulness_pass_rate')
+        faith_ok = faith is None or faith >= min_pass_rate
         return (
             body.get('failed', 1) == 0
             and body.get('completed', 0) > 0
             and rate is not None
             and rate >= min_pass_rate
+            and faith_ok
         )
     except (json.JSONDecodeError, OSError):
         return False

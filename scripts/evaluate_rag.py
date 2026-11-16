@@ -19,10 +19,32 @@ import httpx
 REF = re.compile(r'\[S(\d+)\]')
 
 
+def score_faithfulness(row: dict, case: dict, response: dict, answer: str) -> None:
+    forbidden = list(case.get('must_not_include') or [])
+    row['forbidden_text_absent'] = all(f.casefold() not in answer.casefold() for f in forbidden)
+    min_citations = int(case.get('min_citations') or 0)
+    if case.get('require_citations_when_answered') and not case.get('expected_abstain'):
+        min_citations = max(min_citations, 1)
+    citation_count = len(response.get('citations') or [])
+    row['min_citations_pass'] = citation_count >= min_citations
+    row['citation_marks_present'] = (
+        not case.get('require_citation_marks')
+        or not response.get('citations')
+        or bool(REF.search(answer))
+    )
+    row['faithfulness_pass'] = (
+        row['forbidden_text_absent']
+        and row['min_citations_pass']
+        and row['citation_marks_present']
+    )
+
+
 def case_quality_pass(row: dict, case: dict) -> bool:
     if row.get('status') != 'ok':
         return False
     if row.get('citation_labels_valid') is False:
+        return False
+    if row.get('faithfulness_pass') is False:
         return False
     expected = set(case.get('expected_doc_ids') or [])
     if expected and row.get('document_recall', 0) < 1.0:
@@ -77,6 +99,9 @@ def evaluate_cases(cases: list[dict], ask) -> dict:
                 row['required_text_pass'] = match
                 stats['required_text_correct'] += int(match)
                 stats['required_text_cases'] += 1
+            score_faithfulness(row, case, response, answer)
+            stats['faithfulness_correct'] += int(row['faithfulness_pass'])
+            stats['faithfulness_cases'] += 1
             row['quality_pass'] = case_quality_pass(row, case)
             if not row['quality_pass']:
                 stats['quality_failures'] += 1
@@ -96,8 +121,15 @@ def evaluate_cases(cases: list[dict], ask) -> dict:
         'document_recall_at_returned': (round(stats['recall_sum'] / stats['recall_cases'], 4) if stats['recall_cases'] else None),
         'abstention_accuracy': (stats['abstention_correct'] / stats['abstention_cases'] if stats['abstention_cases'] else None),
         'required_text_accuracy': (stats['required_text_correct'] / stats['required_text_cases'] if stats['required_text_cases'] else None),
+        'faithfulness_pass_rate': (
+            round(stats['faithfulness_correct'] / stats['faithfulness_cases'], 4)
+            if stats['faithfulness_cases'] else None
+        ),
         'records': rows,
-        'limitations': 'Not an automated ground-truth factuality, faithfulness or human safety assessment.'
+        'limitations': (
+            'Checks operator-supplied must_include/must_not_include, citation marks and abstain rules. '
+            'Not a substitute for human factuality review or adversarial red teaming.'
+        ),
     }
 
 

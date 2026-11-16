@@ -1,2 +1,2 @@
-{"id":"accessible-citation","question":"Which project deadline does the reference document specify?","expected_doc_ids":["REPLACE_WITH_DOCUMENT_UUID"],"must_include":["REPLACE_WITH_EXPECTED_ANSWER_FRAGMENT"],"expected_abstain":false}
-{"id":"no-access","question":"What is written in the test document I cannot access?","expected_doc_ids":[],"expected_abstain":true}
+{"id":"accessible-citation","question":"Which project deadline does the reference document specify?","expected_doc_ids":["REPLACE_WITH_DOCUMENT_UUID"],"must_include":["REPLACE_WITH_EXPECTED_ANSWER_FRAGMENT"],"must_not_include":["REPLACE_WRONG_DATE"],"require_citation_marks":true,"min_citations":1,"expected_abstain":false}
+{"id":"no-access","question":"What is written in the test document I cannot access?","expected_doc_ids":[],"expected_abstain":true,"must_not_include":["classified leak"]}

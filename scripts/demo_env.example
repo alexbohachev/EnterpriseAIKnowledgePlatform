@@ -1,0 +1,5 @@
+# Synthetic throwaway credentials for demo_from_zero.* only — never use in production.
+EAKP_TEST_ALICE_EMAIL=alice@test.local
+EAKP_TEST_ALICE_PASSWORD=EakpTestAlice12
+EAKP_TEST_BOB_EMAIL=bob@test.local
+EAKP_TEST_BOB_PASSWORD=EakpTestBob12

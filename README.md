@@ -8,6 +8,25 @@
 Зібрати локальні докази: `python scripts/stage8_preflight.py`.  
 На справжньому Docker-стенді: `python scripts/ocr_live_smoke.py --accept-synthetic-write`.
 
+## Відтворюване демо з нуля (синтетика, throwaway)
+
+Повний прогін: Docker → probe → користувачі Alice/Bob → smoke → OCR → **seed eval (8+4 кейсів)** → RAG eval з **faithfulness** → load → preflight → реєстр OPEN.
+
+```powershell
+# Windows (API на 127.0.0.1:8000)
+powershell -ExecutionPolicy Bypass -File scripts\demo_from_zero.ps1
+```
+
+```bash
+# Linux / macOS
+chmod +x scripts/demo_from_zero.sh
+./scripts/demo_from_zero.sh
+```
+
+Паролі тестових користувачів: `scripts/demo_env.example` (не для production).  
+Набори eval: `examples/EVAL_DATASETS_UA.md`.  
+**OPEN** (semantic graph, multimodal, air-gap audit, GPU): `docs/Stage8_Open_Requirements_UA.md` + `reports/open_requirements_register.json`.
+
 # Enterprise AI Knowledge Platform — OTUS Architect AI/ML
 
 **Stage 7 · Defense / submission candidate (Ukrainian docs, Python sources)**
@@ -48,7 +67,8 @@ docker compose exec api python -m app.integration_probe
 docker compose -f compose.yaml -f compose.dev.yaml up -d --build
 # API: http://127.0.0.1:8000/docs — backend network is non-internal; omit compose.dev.yaml for lab air-gap.
 ```
-Then run the synthetic E2E, RAG evaluation, query-load and monitor collection flows described in `docs/Stage7_Operator_Runbook_UA.md`. Never use sensitive production documents for the demonstration.
+Or run the single orchestrator: `scripts/demo_from_zero.ps1` / `scripts/demo_from_zero.sh`.  
+Manual steps remain in `docs/Stage7_Operator_Runbook_UA.md`. Never use sensitive production documents.
 
 ## Why the status is candid
 The written OTUS task in `project .txt` demands an air-gapped corporate multimodal GraphRAG solution, deployment/data-flow diagrams, ACL evidence, 5–7-minute demo, and measured RPS/latency. This bundle includes the source and documentation but **not proof of all runtime acceptance criteria**. All unmeasured results are explicitly tagged **OPEN / NOT MEASURED**.
