@@ -17,6 +17,42 @@ import sys
 import httpx
 
 REF = re.compile(r'\[S(\d+)\]')
+EVAL_SCHEMA_VERSION = 2
+
+
+def resolve_abstain_mode(case: dict) -> str | None:
+    if case.get('abstain_mode') in {'acl_denied', 'unanswerable'}:
+        return case['abstain_mode']
+    if case.get('expected_abstain'):
+        return 'acl_denied' if case.get('forbidden_doc_ids') else 'unanswerable'
+    return None
+
+
+def score_abstention(row: dict, case: dict, response: dict, answer: str) -> None:
+    mode = resolve_abstain_mode(case)
+    if not mode:
+        return
+    citations = response.get('citations') or []
+    cited_ids = {c['document_id'] for c in citations}
+    forbidden_docs = set(case.get('forbidden_doc_ids') or [])
+    row['abstain_mode'] = mode
+    row['retrieval_abstention_pass'] = not citations and response.get('retrieval_count', 0) == 0
+    if mode == 'acl_denied':
+        leaked_docs = cited_ids & forbidden_docs if forbidden_docs else cited_ids
+        row['access_isolation_pass'] = not leaked_docs
+        row['abstention_pass'] = row['access_isolation_pass'] and all(
+            frag.casefold() not in answer.casefold() for frag in (case.get('must_not_include') or [])
+        )
+    else:
+        row['access_isolation_pass'] = None
+        grounded = all(frag.casefold() not in answer.casefold() for frag in (case.get('must_not_include') or []))
+        markers = case.get('refusal_markers') or [
+            'немає', 'немає підтвердженої', 'no confirmed', 'not found', 'no information',
+            'cannot confirm', 'не знайден',
+        ]
+        refusal = any(m.casefold() in answer.casefold() for m in markers)
+        row['grounded_refusal_pass'] = grounded and (refusal or not citations)
+        row['abstention_pass'] = row['grounded_refusal_pass']
 
 
 def score_faithfulness(row: dict, case: dict, response: dict, answer: str) -> None:
@@ -49,7 +85,7 @@ def case_quality_pass(row: dict, case: dict) -> bool:
     expected = set(case.get('expected_doc_ids') or [])
     if expected and row.get('document_recall', 0) < 1.0:
         return False
-    if case.get('expected_abstain') and not row.get('retrieval_abstention_pass'):
+    if resolve_abstain_mode(case) and not row.get('abstention_pass'):
         return False
     if case.get('must_include') and not row.get('required_text_pass'):
         return False
@@ -62,7 +98,6 @@ def evaluate_cases(cases: list[dict], ask) -> dict:
     for i, case in enumerate(cases, 1):
         case_id = str(case.get('id', f'case-{i}'))[:64]
         expected = set(case.get('expected_doc_ids', []))
-        expected_abstain = case.get('expected_abstain', False)
         required = list(case.get('must_include', []))
         row = {'id': case_id}
         try:
@@ -89,10 +124,9 @@ def evaluate_cases(cases: list[dict], ask) -> dict:
                 row['document_recall'] = round(recall, 4)
                 stats['recall_sum'] += recall
                 stats['recall_cases'] += 1
-            if expected_abstain:
-                abstained = not response['citations'] and response['retrieval_count'] == 0
-                row['retrieval_abstention_pass'] = abstained
-                stats['abstention_correct'] += int(abstained)
+            score_abstention(row, case, response, answer)
+            if resolve_abstain_mode(case):
+                stats['abstention_correct'] += int(row.get('abstention_pass', False))
                 stats['abstention_cases'] += 1
             if required:
                 match = all(fragment.casefold() in answer.casefold() for fragment in required)
@@ -111,6 +145,7 @@ def evaluate_cases(cases: list[dict], ask) -> dict:
             stats['quality_failures'] += 1
         rows.append(row)
     return {
+        'eval_schema_version': EVAL_SCHEMA_VERSION,
         'cases': len(cases), 'completed': stats['completed'], 'failed': stats['failed_requests'],
         'quality_failures': stats['quality_failures'],
         'quality_pass_rate': (

@@ -24,6 +24,9 @@ def _json_passed(path: Path) -> bool:
     except (json.JSONDecodeError, OSError):
         return False
 
+RAG_EVAL_SCHEMA_VERSION = 2
+LOAD_REPORT_SCHEMA_VERSION = 1
+
 reports = root / 'reports'
 live_smoke = _json_passed(reports / 'integration_smoke.json')
 live_ocr = _json_passed(reports / 'ocr_live_e2e.json')
@@ -32,19 +35,24 @@ def _rag_eval_ok(path: Path, min_pass_rate: float = 1.0) -> bool:
         return False
     try:
         body = json.loads(path.read_text(encoding='utf-8'))
-        rate = body.get('quality_pass_rate')
-        if rate is None and body.get('completed', 0) > 0:
-            rate = 1.0 - (body.get('quality_failures', 0) / body['completed'])
-        faith = body.get('faithfulness_pass_rate')
-        faith_ok = faith is None or faith >= min_pass_rate
+        if body.get('eval_schema_version', 0) < RAG_EVAL_SCHEMA_VERSION:
+            return False
+        required = {'quality_failures', 'quality_pass_rate', 'faithfulness_pass_rate', 'completed', 'failed'}
+        if not required.issubset(body.keys()):
+            return False
+        if not isinstance(body['quality_failures'], int):
+            return False
+        rate = body['quality_pass_rate']
+        faith = body['faithfulness_pass_rate']
+        if rate is None or faith is None:
+            return False
         return (
-            body.get('failed', 1) == 0
-            and body.get('completed', 0) > 0
-            and rate is not None
+            body['failed'] == 0
+            and body['completed'] > 0
             and rate >= min_pass_rate
-            and faith_ok
+            and faith >= min_pass_rate
         )
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, TypeError):
         return False
 
 def _load_query_ok(path: Path, max_p95_ms: float = 60_000) -> bool:
@@ -54,12 +62,15 @@ def _load_query_ok(path: Path, max_p95_ms: float = 60_000) -> bool:
         body = json.loads(path.read_text(encoding='utf-8'))
         p95 = (body.get('latency_ms') or {}).get('p95')
         ratio = body.get('http_success_ratio')
+        if body.get('report_schema_version', 0) < LOAD_REPORT_SCHEMA_VERSION:
+            return False
         return (
             body.get('mode') == 'query'
             and ratio is not None
             and ratio >= 0.99
             and p95 is not None
             and p95 <= max_p95_ms
+            and body.get('provenance') == 'live_http_client_side'
         )
     except (json.JSONDecodeError, OSError):
         return False
@@ -105,6 +116,8 @@ record={
   'air_gap_certification':'NOT_EXECUTED',
   'gpu_inference_benchmark':'NOT_EXECUTED',
   'security_pentest':'NOT_EXECUTED',
+  'rag_eval_schema_version_required': RAG_EVAL_SCHEMA_VERSION,
+  'load_report_schema_version_required': LOAD_REPORT_SCHEMA_VERSION,
   'release_acceptance':'BLOCKED' if blockers else 'ACCEPTED',
   'blockers': blockers,
   'evidence_files': {

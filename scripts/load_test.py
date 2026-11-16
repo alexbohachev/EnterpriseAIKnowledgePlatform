@@ -96,9 +96,13 @@ def main():
         p.error('For query mode supply --accept-real-load after reviewing rate-limit costs and test infrastructure')
     result = asyncio.run(run_load(args.url, args.mode, os.getenv('EAKP_EVAL_TOKEN'),
                                   args.seconds, args.concurrency, args.rps, args.question))
-    result.update({'generated_utc': datetime.now(timezone.utc).isoformat(),
-                   'provenance': 'live_http_client_side', 'configured_rps': args.rps,
-                   'concurrency': args.concurrency})
+    result.update({
+        'report_schema_version': 1,
+        'generated_utc': datetime.now(timezone.utc).isoformat(),
+        'provenance': 'live_http_client_side',
+        'configured_rps': args.rps,
+        'concurrency': args.concurrency,
+    })
     dest = Path(args.output)
     dest.parent.mkdir(parents=True, exist_ok=True)
     dest.write_text(json.dumps(result, indent=2), encoding='utf-8')

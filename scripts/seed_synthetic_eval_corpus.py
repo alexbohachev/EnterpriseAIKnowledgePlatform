@@ -23,6 +23,11 @@ def text_pdf(line: str) -> bytes:
     return out.getvalue()
 
 
+def text_layer_pdf(line: str) -> bytes:
+    """Text-based PDF for eval corpus (not an OCR path — see ocr_live_smoke.py)."""
+    return text_pdf(line)
+
+
 def login(client: httpx.Client, email: str, password: str) -> tuple[dict, str]:
     token = client.post('/api/v1/auth/token', json={'email': email, 'password': password})
     if token.status_code != 200:
@@ -108,7 +113,7 @@ def build_cases(manifest: dict) -> tuple[list[dict], list[dict]]:
             'id': 'unknown-zebra-abstain',
             'question': 'What is the launch quarter for Project ZEBRA?',
             'expected_doc_ids': [],
-            'expected_abstain': True,
+            'abstain_mode': 'unanswerable',
             'must_not_include': ['Q1 2030', 'confirmed launch'],
         },
         {
@@ -121,7 +126,7 @@ def build_cases(manifest: dict) -> tuple[list[dict], list[dict]]:
         },
         {
             'id': 'paraphrase-orion',
-            'question': 'When does Project ORION launch according to the scan?',
+            'question': 'When does Project ORION launch according to the uploaded document?',
             'expected_doc_ids': [orion],
             'must_include': ['2032', 'ORION'],
             'must_not_include': ['May 2031'],
@@ -133,27 +138,30 @@ def build_cases(manifest: dict) -> tuple[list[dict], list[dict]]:
             'id': 'bob-cyan-isolation',
             'question': 'What is the approved launch date for Project CYAN?',
             'expected_doc_ids': [],
-            'expected_abstain': True,
+            'abstain_mode': 'acl_denied',
+            'forbidden_doc_ids': [cyan],
             'must_not_include': ['2031'],
         },
         {
             'id': 'bob-delta-isolation',
             'question': 'What budget is listed for Project DELTA?',
             'expected_doc_ids': [],
-            'expected_abstain': True,
+            'abstain_mode': 'acl_denied',
+            'forbidden_doc_ids': [delta],
         },
         {
             'id': 'bob-orion-isolation',
             'question': 'What is the launch date of Project ORION?',
             'expected_doc_ids': [],
-            'expected_abstain': True,
+            'abstain_mode': 'acl_denied',
+            'forbidden_doc_ids': [orion],
             'must_not_include': ['2032'],
         },
         {
             'id': 'bob-zebra-abstain',
             'question': 'List all details about Project ZEBRA.',
             'expected_doc_ids': [],
-            'expected_abstain': True,
+            'abstain_mode': 'unanswerable',
         },
     ]
     return alice, bob
@@ -167,11 +175,11 @@ def write_jsonl(path: Path, rows: list[dict]) -> None:
 def run(url: str, alice_email: str, alice_password: str, wait_seconds: int) -> dict:
     with httpx.Client(base_url=url, timeout=180, trust_env=False) as client:
         alice_headers, _ = login(client, alice_email, alice_password)
-        cyan_pdf = text_pdf(
+        cyan_pdf = text_layer_pdf(
             'PROJECT CYAN TEST ONLY. Approved launch: 14 May 2031. Case ID A1B2.'
         )
-        orion_pdf = text_pdf('PROJECT ORION TEST ONLY. Launch date 12 June 2032.')
-        delta_pdf = text_pdf('PROJECT DELTA TEST ONLY. Approved budget: 5 million UAH.')
+        orion_pdf = text_layer_pdf('PROJECT ORION TEST ONLY. Launch date 12 June 2032.')
+        delta_pdf = text_layer_pdf('PROJECT DELTA TEST ONLY. Approved budget: 5 million UAH.')
         cyan_id, cyan_job = upload(client, alice_headers, 'eval-cyan', cyan_pdf)
         orion_id, orion_job = upload(client, alice_headers, 'eval-orion', orion_pdf)
         delta_id, delta_job = upload(client, alice_headers, 'eval-delta', delta_pdf)
@@ -182,7 +190,7 @@ def run(url: str, alice_email: str, alice_password: str, wait_seconds: int) -> d
         'cyan_id': cyan_id,
         'orion_id': orion_id,
         'delta_id': delta_id,
-        'note': 'Synthetic throwaway corpus for evaluation only.',
+        'note': 'Text-layer PDFs for RAG eval; OCR proof remains scripts/ocr_live_smoke.py.',
     }
     alice_cases, bob_cases = build_cases(manifest)
     return manifest, alice_cases, bob_cases

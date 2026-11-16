@@ -94,12 +94,13 @@ def test_rag_evaluation_uses_only_explicit_ground_truth_not_guessing():
     script = load_script('evaluate_rag.py')
     cases = [
         {'id': 'citation', 'question':'When?', 'expected_doc_ids':['doc1'], 'must_include':['Wednesday']},
-        {'id': 'abstain', 'question':'Secret?', 'expected_abstain':True},
+        {'id': 'abstain', 'question':'Secret?', 'abstain_mode': 'unanswerable'},
     ]
     def fake_ask(question):
         return ({'answer':'Wednesday [S1]', 'retrieval_count':1,
                  'citations':[{'source':'S1','document_id':'doc1'}]} if question == 'When?' else
-                {'answer':'No documents found','retrieval_count':0,'citations':[]})
+                {'answer':'У доступних документах немає підтвердженої відповіді.','retrieval_count':2,
+                 'citations':[]})
     data = script.evaluate_cases(cases, fake_ask)
     assert data['completed'] == 2
     assert data['failed'] == 0
@@ -109,6 +110,31 @@ def test_rag_evaluation_uses_only_explicit_ground_truth_not_guessing():
     assert data['quality_failures'] == 0
     assert data['quality_pass_rate'] == 1
     assert 'Not an automated' in data['limitations']
+
+
+def test_rag_evaluation_unanswerable_allows_retrieval_without_empty_violation():
+    script = load_script('evaluate_rag.py')
+    case = {'id': 'zebra', 'question': 'ZEBRA?', 'abstain_mode': 'unanswerable',
+            'must_not_include': ['Q1 2030']}
+    data = script.evaluate_cases([case], lambda _: {
+        'answer': 'Немає підтвердженої інформації про ZEBRA у доступних документах.',
+        'retrieval_count': 4,
+        'citations': [{'source': 'S1', 'document_id': 'other'}],
+    })
+    assert data['quality_failures'] == 0
+    assert data['eval_schema_version'] == 2
+
+
+def test_rag_evaluation_acl_denied_detects_citation_leak():
+    script = load_script('evaluate_rag.py')
+    case = {'id': 'bob', 'question': 'CYAN?', 'abstain_mode': 'acl_denied',
+            'forbidden_doc_ids': ['secret-doc']}
+    leak = script.evaluate_cases([case], lambda _: {
+        'answer': 'No access',
+        'retrieval_count': 1,
+        'citations': [{'source': 'S1', 'document_id': 'secret-doc'}],
+    })
+    assert leak['quality_failures'] == 1
 
 
 def test_rag_evaluation_faithfulness_forbidden_text_and_citation_marks():

@@ -17,9 +17,9 @@
 
 | Артефакт | Умова «PASS» |
 |---|---|
-| `rag_eval.json` | `failed == 0`, `completed > 0`, `quality_pass_rate >= 1.0` (або `quality_failures == 0`) |
+| `rag_eval.json` | `eval_schema_version >= 2`, усі поля `quality_failures`, `quality_pass_rate`, `faithfulness_pass_rate`; `failed == 0` |
 | `rag_eval_bob_acl.json` | те саме (ізоляція Bob / abstain) |
-| `load_query.json` | `mode == "query"`, `http_success_ratio >= 0.99`, `latency_ms.p95 <= 60000` |
+| `load_query.json` | `report_schema_version >= 1`, `provenance == live_http_client_side`, `http_success_ratio >= 0.99`, `p95 <= 60000` |
 
 Перевірка: `python scripts/stage8_preflight.py` → поля `live_rag_eval`, `live_rag_bob_acl`, `live_load_query_report` = `PASS`.
 

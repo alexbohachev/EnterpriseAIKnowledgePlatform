@@ -13,6 +13,7 @@
 - `must_not_include` — заборонені галюцинації / плутанина дат
 - `require_citation_marks` — у відповіді має бути `[S1]` тощо, якщо є цитати
 - `min_citations` / `require_citations_when_answered` — мінімум цитат у JSON
-- `expected_abstain` — очікуваний відмовний retrieval
+- `abstain_mode`: `acl_denied` (ізоляція доступу, `forbidden_doc_ids`) або `unanswerable` (тема поза корпусом; retrieval дозволений)
+- `expected_abstain` — застарілий прапорець; краще явний `abstain_mode`
 
 Звіт: `quality_pass_rate`, `faithfulness_pass_rate` у `reports/rag_eval*.json`.
