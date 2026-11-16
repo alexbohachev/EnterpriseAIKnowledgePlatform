@@ -11,8 +11,9 @@ import sys
 from datetime import datetime, timezone
 
 root = Path(__file__).resolve().parents[1]
-
-sys.path.insert(0, str(root / 'scripts'))
+_scripts = Path(__file__).resolve().parent
+if str(_scripts) not in sys.path:
+    sys.path.insert(0, str(_scripts))
 from mvp_evidence_gates import (  # noqa: E402
     LOAD_REPORT_SCHEMA_VERSION,
     RAG_EVAL_SCHEMA_VERSION,

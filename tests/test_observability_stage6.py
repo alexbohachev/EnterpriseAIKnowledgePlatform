@@ -2,6 +2,7 @@
 from __future__ import annotations
 import importlib.util
 import json
+import sys
 from pathlib import Path
 import pytest
 from prometheus_client.parser import text_string_to_metric_families
@@ -84,7 +85,11 @@ def test_invalid_metrics_secret_and_external_collector_rejected():
 
 
 def load_script(name):
-    p = Path(__file__).resolve().parents[1] / 'scripts' / name
+    scripts = Path(__file__).resolve().parents[1] / 'scripts'
+    scripts_str = str(scripts)
+    if scripts_str not in sys.path:
+        sys.path.insert(0, scripts_str)
+    p = scripts / name
     spec = importlib.util.spec_from_file_location(f'test_{name[:-3]}_script', p)
     obj = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(obj)
