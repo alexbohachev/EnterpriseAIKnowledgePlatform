@@ -8,7 +8,7 @@
 
 **Матеріали:**
 1. Вихідний код (приватний репозиторій): https://github.com/alexbohachev/EnterpriseAIKnowledgePlatform  
-2. Архів live-доказів: `EAKP_Stage8_Live_Evidence_2026-11-16.zip` (додано до GitHub Release або додаток до листа)  
+2. Архів live-доказів: https://github.com/alexbohachev/EnterpriseAIKnowledgePlatform/releases/tag/stage8-live-evidence-2026-11-16  
 3. Презентація: `EAKP_OTUS_Defense_Stage8_UA.pptx` (доданий слайд Stage 8)  
 4. Чекліст і сценарій: `docs/Stage8_Submission_Checklist_UA.md`, `docs/Stage8_OTUS_Demo_Script_UA.md`
 
