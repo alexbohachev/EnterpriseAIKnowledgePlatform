@@ -25,6 +25,9 @@ $paths = @(
   'docs\Stage8_Defense_Speech_Addendum_UA.md',
   'presentation\EAKP_OTUS_Defense_UA.pdf',
   'presentation\EAKP_OTUS_Defense_Stage8_UA.pptx',
+  'presentation\EAKP_OTUS_Defense_Stage8_UA.pdf',
+  'docs\Stage8_Demo_Rehearsal_Checklist_UA.md',
+  'docs\Stage8_Demo_Teleprompter_UA.md',
   'docs\Stage8_OTUS_Submission_Cover_Letter_UA.md'
 )
 foreach ($rel in $paths) {
