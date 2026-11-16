@@ -1,0 +1,21 @@
+digraph Stage3 {
+    graph [rankdir=LR, bgcolor="white", fontname="DejaVu Sans", label="EAKP Stage 3 — C4 Level 4: реальна структура коду", fontsize=20, labelloc=t, pad=0.3, nodesep=0.3, ranksep=0.55];
+    node [shape=box, style="rounded,filled", fillcolor="#e5f1ff", color="#1d5488", fontname="DejaVu Sans", fontsize=11, margin="0.18,0.12"];
+    edge [fontname="DejaVu Sans", fontsize=9, color="#50677f"];
+    client [label="Client\nBearer JWT / PDF upload", fillcolor="#fff2d6"];
+    subgraph cluster_api {label="Control Plane — FastAPI app"; style=rounded; color="#7da5ce";
+        main [label="app/main.py\nHTTP routes / ACL gates"];
+        sec [label="app/security.py\nJWT, Argon2, RBAC/ACL"];
+        schema [label="app/schemas.py\nPydantic contracts"];
+        config [label="app/config.py\nvalidated settings"];
+    }
+    subgraph cluster_data {label="Data / Worker Plane"; style=rounded; color="#6ea892";
+        worker [label="app/worker.py\nPDF extraction / jobs", fillcolor="#e7f6ec"];
+        storage [label="app/storage.py\nprivate local objects", fillcolor="#e7f6ec"];
+        model [label="app/models.py + db.py\nSQLAlchemy metadata/ACL", fillcolor="#e7f6ec"];
+    }
+    postgres [shape=cylinder, label="PostgreSQL\nusers / docs / ACL / jobs / chunks", fillcolor="#f3f3f3"];
+    objects [shape=cylinder, label="private volume\nPDF + text chunks", fillcolor="#f3f3f3"];
+    unimpl [shape=note, label="Stage 4 (NOT IMPLEMENTED)\nQdrant, Neo4j, local LLM, LangGraph", fillcolor="#ffe8e8", color="#b94444"];
+    client -> main; main -> sec; main -> schema; sec -> model; main -> model; main -> storage; worker -> model; worker -> storage; model -> postgres; storage -> objects; main -> unimpl [style=dashed, label="501 /query"];
+}

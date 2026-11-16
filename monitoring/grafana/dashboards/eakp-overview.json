@@ -1,0 +1,170 @@
+{
+  "id": null,
+  "uid": "eakp-stage6",
+  "title": "Enterprise AI Knowledge Platform / Stage 6",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "15s",
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "HTTP RPS",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "eakp-prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(eakp_http_requests_total[5m]))"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps"
+        }
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": 2,
+      "title": "Query p95 (seconds)",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "eakp-prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(eakp_http_request_duration_seconds_bucket{route=\"/api/v1/query\"}[5m])))"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s"
+        }
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      }
+    },
+    {
+      "id": 3,
+      "title": "HTTP 5xx rate",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "eakp-prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(eakp_http_requests_total{status_class=\"5xx\"}[5m]))"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps"
+        }
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 8
+      }
+    },
+    {
+      "id": 4,
+      "title": "RAG generation p95",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "eakp-prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(eakp_rag_stage_duration_seconds_bucket{stage=\"generation\"}[5m])))"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s"
+        }
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 8
+      }
+    },
+    {
+      "id": 5,
+      "title": "Retrieved excerpts (mean)",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "eakp-prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "rate(eakp_rag_retrieved_excerpts_sum[5m]) / clamp_min(rate(eakp_rag_retrieved_excerpts_count[5m]), 0.001)"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        }
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 16
+      }
+    },
+    {
+      "id": 6,
+      "title": "In-flight requests",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "eakp-prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "eakp_http_requests_inflight"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        }
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 16
+      }
+    }
+  ]
+}

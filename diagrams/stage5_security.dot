@@ -1,0 +1,15 @@
+digraph EAKP5 {
+  graph [rankdir=LR, bgcolor="white", nodesep=0.34, ranksep=0.35, splines=ortho, pad=0.2];
+  node [shape=box, style="rounded,filled", fontname="DejaVu Sans", fontsize=11, margin="0.11,0.13", color="#B4C7D8", fillcolor="#E8F2FA", fontcolor="#17324D"];
+  edge [color="#557A98", penwidth=1.35, arrowsize=0.55];
+  U[label="Client / JWT"];
+  API[label="FastAPI\nIP / User Rate Limit\nInput Guard",fillcolor="#E2E9F9"];
+  SQL[label="PostgreSQL\nACL + token_version\nIndex publication",fillcolor="#DCF4E8"];
+  RET[label="LangGraph\nSQL ACL retrieval",fillcolor="#E8F2FA"];
+  IDS[label="Qdrant + Neo4j\nuntrusted IDs",fillcolor="#FFF0D8"];
+  LLM[label="Ollama (local)\nsanitized context",fillcolor="#FFF0D8"];
+  OUT[label="Citation check / PII mask\nSQL ACL + token recheck",fillcolor="#DCF4E8"];
+  ANS[label="Answer + citations",fillcolor="#E2E9F9"];
+  U->API; API->SQL; API->RET; RET->IDS; RET->LLM; LLM->OUT; OUT->ANS;
+  SQL->RET; SQL->OUT;
+}

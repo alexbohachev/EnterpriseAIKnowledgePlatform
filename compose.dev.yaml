@@ -1,0 +1,6 @@
+# Local operator overlay: publish API on 127.0.0.1 and allow host↔container egress.
+# Usage: docker compose -f compose.yaml -f compose.dev.yaml up -d --build
+# Air-gap demo still uses compose.yaml alone (backend internal: true).
+networks:
+  backend:
+    internal: false

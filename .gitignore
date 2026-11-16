@@ -1,0 +1,12 @@
+.env
+storage/
+*.db
+*.sqlite*
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+*.pyc
+
+# Stage 6 monitoring credentials and collected data
+.secrets/
+reports/*.json

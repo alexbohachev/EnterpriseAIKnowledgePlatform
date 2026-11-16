@@ -1,0 +1,17 @@
+digraph G {
+ graph [label="Sequence · authorized query, evidence and citations",labelloc=t,fontsize=20,fontname="Noto Sans",ranksep="0.32",nodesep="0.18",pad="0.18",bgcolor=white];
+ node [shape=box,style="rounded,filled",fillcolor="#edf3fa",color="#47698b",fontsize=12,fontname="Noto Sans"];
+ edge [fontname="Noto Sans",fontsize=10,color="#526d81",arrowsize=.6];
+ s1 [label="1  Reader → API\nPOST /query + signed token"];
+ s2 [label="2  API → Policy\nvalidate JWT; snapshot ACL epoch"];
+ s3 [label="3  Orchestrator → Qdrant / Neo4j\nallowlist doc filter, candidate IDs"];
+ s4 [label="4  Policy → PostgreSQL\nAUTHORITATIVE recheck chunks / paths",fillcolor="#ffead3"];
+ s5 [label="5  Merge / rerank allowed evidence\nno graph-only private metadata"];
+ s6 [label="6  LLM local inference\nanswer from allowed evidence"];
+ s7 [label="7  Validate citations + ACL epoch\nrecheck before response",fillcolor="#ffead3"];
+ s8 [label="8  API → Reader\nanswer + existing citation IDs + trace_id",fillcolor="#dbf2e4"];
+ denied [label="Else: deny / abstain\nNO secret text in response",fillcolor="#f5dde0"];
+ {rank=same; s4; denied}
+ s1 -> s2 -> s3 -> s4 -> s5 -> s6 -> s7 -> s8;
+ s4 -> denied [label="none / denied",style=dashed]; s7 -> denied [label="changed epoch",style=dashed];
+}

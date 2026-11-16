@@ -1,0 +1,15 @@
+digraph G {
+ graph [label="Sequence · ingestion, versioned publish, rollback",labelloc=t,fontsize=20,fontname="Noto Sans",ranksep="0.28",nodesep="0.2",pad="0.18",bgcolor=white];
+ node [shape=box,style="rounded,filled",fillcolor="#edf3fa",color="#47698b",fontsize=12,fontname="Noto Sans"];
+ edge [fontname="Noto Sans",fontsize=10,color="#526d81",arrowsize=.58];
+ a [label="1 Owner → API: PDF + grants"];
+ b [label="2 API → PG: document draft + job, checksum\nObject store: immutable original"];
+ c [label="3 Worker: claim job (SKIP LOCKED)\nlease + attempt_count"];
+ d [label="4 OCR / parse → page chunks\nprovenance doc/version/page"];
+ e [label="5 local embeddings + entity extraction"];
+ f [label="6 WRITE staging Qdrant + Neo4j\n(index_run_id, inactive)"];
+ g [label="7 VERIFY both indexes\ncounts, provenance, graph paths",fillcolor="#ffeaca"];
+ h [label="8 PG commit: set active_index_run_id\natomic publication; job READY",fillcolor="#d8f0e1"];
+ x [label="ERROR: job FAILED / retry capped\nstaging ignored → cleanup",fillcolor="#f4dfe1"];
+ a->b->c->d->e->f->g->h; d->x [style=dashed,label="parse error"]; g->x [style=dashed,label="verification fails"];
+}

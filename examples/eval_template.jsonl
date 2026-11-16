@@ -1,0 +1,2 @@
+{"id":"accessible-citation","question":"Which project deadline does the reference document specify?","expected_doc_ids":["REPLACE_WITH_DOCUMENT_UUID"],"must_include":["REPLACE_WITH_EXPECTED_ANSWER_FRAGMENT"],"expected_abstain":false}
+{"id":"no-access","question":"What is written in the test document I cannot access?","expected_doc_ids":[],"expected_abstain":true}

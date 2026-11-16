@@ -1,0 +1,24 @@
+digraph G {
+ graph [label="C4 Level 3 · Компоненти Query / Agent Orchestrator",labelloc=t,fontsize=21,fontname="Noto Sans",bgcolor="white",pad="0.24",ranksep="0.46",nodesep="0.23",splines=ortho];
+ node [shape=box,style="rounded,filled",fillcolor="#eff5fb",color="#34577b",fontname="Noto Sans",fontsize=13,margin="0.16,0.12"];
+ edge [color="#63788e",arrowsize=.65,penwidth=1.25,fontname="Noto Sans",fontsize=10];
+ api [label="FastAPI boundary\nverified JWT + rate limit",fillcolor="#dbeafa"];
+ subgraph cluster_cp {label="Control Plane · LangGraph state machine";fontname="Noto Sans";fontsize=16;color="#7f9ab6";style="rounded";bgcolor="#f9fbff";
+ auth [label="Authorization Gate\nclaims + resource-policy snapshot",fillcolor="#ffe4ce"];
+ plan [label="Query Planner\nroute: vector / graph"];
+ retr [label="Retrieval Adapter\nscoped vector + graph candidates"];
+ guard [label="Evidence & ACL Gate\nDB recheck for ALL paths",fillcolor="#ffe4ce"];
+ rank [label="Merge / Rerank\nallowed evidence only"];
+ decide [label="Evidence Decision\nsufficient?",shape=diamond,fillcolor="#fcecc5"];
+ model [label="LLM Adapter\nlocal model only"];
+ cite [label="Citation Validator\nIDs, pages, final ACL recheck",fillcolor="#ffe4ce"];
+ refuse [label="Abstain / Deny\nno content disclosed",fillcolor="#f7dfe3"];
+ resp [label="Response DTO\nanswer, citations, trace_id",fillcolor="#d8f1e5"];
+ }
+ audit [label="Audit + telemetry\nmetadata only",fillcolor="#e7e1f2"];
+ api -> auth -> plan -> retr -> guard -> rank -> decide;
+ decide -> model [label="yes"]; decide -> refuse [label="no"];
+ model -> cite -> resp; cite -> refuse [style=dashed,label="invalid/stale"];
+ refuse -> resp;
+ auth -> audit [style=dashed]; cite -> audit [style=dashed];
+}

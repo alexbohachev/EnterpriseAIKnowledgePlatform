@@ -1,0 +1,21 @@
+digraph G {
+ graph [label="DFD Level 0 · trust boundaries and classified flows",labelloc=t,fontsize=20,fontname="Noto Sans",ranksep="0.6",nodesep="0.23",pad="0.24",bgcolor=white];
+ node [fontname="Noto Sans",fontsize=12,shape=box,style="rounded,filled",fillcolor="#edf3fa",color="#4a7092"];
+ edge [fontname="Noto Sans",fontsize=10,color="#5a7288",arrowsize=.65];
+ reader [label="E1 Employee / Owner\nUntrusted client",fillcolor="#f6e3dc"];
+ admin [label="E2 Admin\nPrivileged client",fillcolor="#f6e3dc"];
+ p [label="P0 EAKP\nauth → ingestion / query → ACL",shape=ellipse,fillcolor="#e1f0fc"];
+ d1 [label="D1 PostgreSQL\nmetadata, grants, audit",fillcolor="#ddf1e6"];
+ d2 [label="D2 Object Storage\nsource PDF + OCR",fillcolor="#ddf1e6"];
+ d3 [label="D3 Qdrant + Neo4j\nversioned derived indexes",fillcolor="#ddf1e6"];
+ d4 [label="D4 Local Models\nLLM, embeddings, OCR",fillcolor="#ddf1e6"];
+ reader -> p [label="T1 query / upload + JWT"];
+ admin -> p [label="T2 grants / revoke"];
+ p -> reader [label="T3 allowed answer, citations"];
+ p -> d1 [label="F1 acl / jobs / audit"]; d1 -> p;
+ p -> d2 [label="F2 original / extracted text"]; d2 -> p;
+ p -> d3 [label="F3 vector + graph artifacts"]; d3 -> p;
+ p -> d4 [label="F4 local inference"]; d4 -> p;
+ off [label="EXTERNAL Internet\nforbidden at runtime",shape=note,fillcolor="#f7d9dd"];
+ off -> p [style=dashed,dir=none,label="DENY egress",color="#c34e5e"];
+}

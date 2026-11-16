@@ -1,0 +1,183 @@
+# Stage 4 offline-capable blueprint. Images and Ollama models MUST be preloaded
+# via a controlled staging process before isolating this network.
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: eakp
+      POSTGRES_USER: eakp
+      POSTGRES_PASSWORD: ${EAKP_DB_PASSWORD:?required}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U eakp -d eakp"]
+      interval: 5s
+      timeout: 3s
+      retries: 15
+    volumes: ["pgdata:/var/lib/postgresql/data"]
+    networks: [backend]
+
+  qdrant:
+    image: qdrant/qdrant:v1.13.4
+    restart: unless-stopped
+    volumes: ["qdrantdata:/qdrant/storage"]
+    networks: [backend]
+
+  neo4j:
+    image: neo4j:5.26-community
+    restart: unless-stopped
+    environment:
+      NEO4J_AUTH: neo4j/${EAKP_NEO4J_PASSWORD:?required}
+    volumes: ["neo4jdata:/data", "neo4jlogs:/logs"]
+    networks: [backend]
+
+  ollama:
+    image: ollama/ollama:0.6.8
+    restart: unless-stopped
+    volumes: ["ollamadata:/root/.ollama"]
+    networks: [backend]
+    # GPU acceleration is host-specific. Configure Docker's GPU support as needed.
+
+  api:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db: {condition: service_healthy}
+      qdrant: {condition: service_started}
+      neo4j: {condition: service_started}
+      ollama: {condition: service_started}
+    environment: &eakp_environment
+      EAKP_DATABASE_URL: postgresql+psycopg://eakp:${EAKP_DB_PASSWORD:?required}@db:5432/eakp
+      EAKP_JWT_SECRET: ${EAKP_JWT_SECRET:?required}
+      EAKP_STORAGE_ROOT: /workspace/storage
+      EAKP_MAX_UPLOAD_MB: 12
+      # OCR of scanned PDFs in restricted worker only. Limit page counts and runtime.
+      EAKP_OCR_ENABLED: "true"
+      EAKP_OCR_LANGUAGES: eng+ukr+rus
+      EAKP_OCR_MAX_PAGES: 20
+      EAKP_OCR_TIMEOUT_SECONDS: 25
+      EAKP_OLLAMA_URL: http://ollama:11434
+      EAKP_EMBEDDING_MODEL: bge-m3
+      EAKP_EMBEDDING_DIM: 1024
+      EAKP_CHAT_MODEL: qwen2.5:3b
+      EAKP_QDRANT_URL: http://qdrant:6333
+      EAKP_QDRANT_COLLECTION: eakp_chunks_v1
+      EAKP_NEO4J_URI: bolt://neo4j:7687
+      EAKP_NEO4J_USER: neo4j
+      EAKP_NEO4J_PASSWORD: ${EAKP_NEO4J_PASSWORD:?required}
+      # Both monitoring integrations default to OFF, requiring explicit opt-in.
+      EAKP_METRICS_TOKEN: ${EAKP_METRICS_TOKEN:-}
+      EAKP_OTLP_TRACES_ENDPOINT: ${EAKP_OTLP_TRACES_ENDPOINT:-}
+    command: ["sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --no-access-log"]
+    volumes: ["objects:/workspace/storage"]
+    read_only: true
+    tmpfs: ["/tmp:rw,noexec,nosuid,size=128m"]
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: ["ALL"]
+    pids_limit: 128
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/readyz', timeout=3)"]
+      interval: 5s
+      timeout: 5s
+      retries: 15
+    ports:
+      - "127.0.0.1:8000:8000"
+    networks: [backend]
+
+  worker:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      api: {condition: service_healthy}
+    environment: *eakp_environment
+    command: ["python", "-m", "app.worker"]
+    read_only: true
+    tmpfs: ["/tmp:rw,noexec,nosuid,size=128m"]
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: ["ALL"]
+    pids_limit: 128
+    volumes: ["objects:/workspace/storage"]
+    networks: [backend]
+
+  indexer:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      api: {condition: service_healthy}
+    environment: *eakp_environment
+    command: ["python", "-m", "app.rag.indexing"]
+    read_only: true
+    tmpfs: ["/tmp:rw,noexec,nosuid,size=128m"]
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: ["ALL"]
+    pids_limit: 128
+    volumes: ["objects:/workspace/storage"]
+    networks: [backend]
+
+  # Optional: docker compose --profile monitoring up --build -d
+  # Operational endpoints bind to 127.0.0.1 on the host; restrict ingress.
+  prometheus:
+    profiles: [monitoring]
+    image: prom/prometheus:v3.2.1
+    restart: unless-stopped
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/prometheus/rules:/etc/prometheus/rules:ro
+      # Operator must create this file before enabling monitoring.
+      - ./.secrets/metrics_token:/etc/prometheus/secrets/metrics_token:ro
+      - promdata:/prometheus
+    command: ["--config.file=/etc/prometheus/prometheus.yml", "--storage.tsdb.path=/prometheus", "--storage.tsdb.retention.time=7d"]
+    ports: ["127.0.0.1:9090:9090"]
+    networks: [backend, monitoring]
+
+  grafana:
+    profiles: [monitoring]
+    image: grafana/grafana:11.5.2
+    restart: unless-stopped
+    depends_on: [prometheus]
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${EAKP_GRAFANA_ADMIN_PASSWORD:-}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+    # Fail closed if operator enables Grafana without an admin password.
+    entrypoint: ["sh", "-ec", "test -n \"$$GF_SECURITY_ADMIN_PASSWORD\" && exec /run.sh"]
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafanadata:/var/lib/grafana
+    ports: ["127.0.0.1:3000:3000"]
+    networks: [monitoring]
+
+  jaeger:
+    profiles: [monitoring]
+    image: jaegertracing/all-in-one:1.63.0
+    restart: unless-stopped
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+    ports: ["127.0.0.1:16686:16686"]
+    networks: [monitoring]
+
+  otel-collector:
+    profiles: [monitoring]
+    image: otel/opentelemetry-collector-contrib:0.120.0
+    restart: unless-stopped
+    command: ["--config=/etc/otelcol/config.yaml"]
+    volumes:
+      - ./monitoring/otel-collector.yaml:/etc/otelcol/config.yaml:ro
+    depends_on: [jaeger]
+    networks: [backend, monitoring]
+
+volumes:
+  pgdata: {}
+  objects: {}
+  qdrantdata: {}
+  neo4jdata: {}
+  neo4jlogs: {}
+  ollamadata: {}
+  promdata: {}
+  grafanadata: {}
+
+networks:
+  backend:
+    internal: true
+  monitoring: {}

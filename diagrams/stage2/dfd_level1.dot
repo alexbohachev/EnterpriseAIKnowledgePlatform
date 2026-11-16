@@ -1,0 +1,21 @@
+digraph G {
+ graph [label="DFD Level 1 · ingestion versus read path",labelloc=t,fontsize=20,fontname="Noto Sans",ranksep="0.46",nodesep="0.23",pad="0.22",bgcolor=white,splines=polyline];
+ node [shape=box,style="rounded,filled",fillcolor="#edf3fa",color="#4b6d8b",fontsize=12,fontname="Noto Sans"];
+ edge [color="#58758a",fontsize=10,fontname="Noto Sans",arrowsize=.58];
+ u [label="User\nverified identity",fillcolor="#f9e7db"];
+ a [label="P1 Authorize + store grants",fillcolor="#ffecd7"];
+ i [label="P2 Ingest / OCR / Chunk",fillcolor="#eaf3fc"];
+ ei [label="P3 Embed / extract entities",fillcolor="#eaf3fc"];
+ pi [label="P4 Publish index run",fillcolor="#dcf0e8"];
+ q [label="P5 Query and retrieve",fillcolor="#eaf3fc"];
+ acl [label="P6 Re-check every provenance\n& ACL epoch",fillcolor="#ffecd7"];
+ gen [label="P7 Local generate + cite / abstain",fillcolor="#eaf3fc"];
+ pg [label="D1 PG policies + job state",shape=cylinder,fillcolor="#e0f1e9"];
+ obj [label="D2 PDFs & OCR",shape=cylinder,fillcolor="#e0f1e9"];
+ vd [label="D3 Qdrant",shape=cylinder,fillcolor="#e0f1e9"];
+ gr [label="D4 Neo4j",shape=cylinder,fillcolor="#e0f1e9"];
+ lm [label="D5 Offline models",shape=cylinder,fillcolor="#e0f1e9"];
+ u -> a; a -> i [label="upload"]; a -> q [label="query"];
+ i -> obj; i -> ei; ei -> lm; ei -> pi; pi -> vd; pi -> gr; pi -> pg;
+ q -> vd; q -> gr; q -> acl; pg -> acl; acl -> gen [label="authorized evidence"]; gen -> lm; gen -> u [label="citations only"];
+}

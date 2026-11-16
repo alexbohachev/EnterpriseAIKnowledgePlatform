@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1102 937" width="1102" height="937">
+<rect width="100%" height="100%" fill="white"/>
+<style>text{font-family:"Noto Sans",sans-serif;} .title{fill:#143b5b;font-size:27px;font-weight:700} .actor{fill:#153957;font-size:19px;font-weight:650} .msg{fill:#142d41;font-size:18px;} .note{font-size:18px;fill:#72552c} .lifeline{stroke:#869eb1;stroke-width:2;stroke-dasharray:8,8;} .arrow{stroke:#436d92;stroke-width:2.4;fill:none} .return{stroke:#608377;stroke-width:2.2;stroke-dasharray:6,4}</style>
+<defs><marker id="end" markerWidth="12" markerHeight="12" refX="11" refY="6" orient="auto"><path d="M 0 1 L 11 6 L 0 11 Z" fill="#436d92"/></marker><marker id="return" markerWidth="12" markerHeight="12" refX="11" refY="6" orient="auto"><path d="M 0 1 L 11 6 L 0 11 Z" fill="#608377"/></marker></defs>
+<text class="title" x="551" y="45" text-anchor="middle">UML Sequence C | Concurrent ACL revocation</text>
+<text class="note" x="25" y="78">Two interleaved operations, one source of truth for ACL.</text>
+<rect x="41" y="100" width="178" height="58" rx="11" fill="#e7f0f8" stroke="#62819b" stroke-width="2"/>
+<text class="actor" x="130" y="135" text-anchor="middle">Reader</text>
+<line class="lifeline" x1="130" y1="158" x2="130" y2="861"/>
+<rect x="249" y="100" width="178" height="58" rx="11" fill="#e7f0f8" stroke="#62819b" stroke-width="2"/>
+<text class="actor" x="338" y="135" text-anchor="middle">Query / Agent</text>
+<line class="lifeline" x1="338" y1="158" x2="338" y2="861"/>
+<rect x="457" y="100" width="178" height="58" rx="11" fill="#e7f0f8" stroke="#62819b" stroke-width="2"/>
+<text class="actor" x="546" y="135" text-anchor="middle">ACL / PG</text>
+<line class="lifeline" x1="546" y1="158" x2="546" y2="861"/>
+<rect x="665" y="100" width="178" height="58" rx="11" fill="#e7f0f8" stroke="#62819b" stroke-width="2"/>
+<text class="actor" x="754" y="135" text-anchor="middle">Owner</text>
+<line class="lifeline" x1="754" y1="158" x2="754" y2="861"/>
+<rect x="873" y="100" width="178" height="58" rx="11" fill="#e7f0f8" stroke="#62819b" stroke-width="2"/>
+<text class="actor" x="962" y="135" text-anchor="middle">Admin API</text>
+<line class="lifeline" x1="962" y1="158" x2="962" y2="861"/>
+<line x1="137" y1="215" x2="328" y2="215" class="arrow" marker-end="url(#end)"/>
+<rect x="149" y="169" width="170" height="26" fill="white" opacity="0.93"/>
+<text class="msg" x="234" y="191" text-anchor="middle">1 start request</text>
+<line x1="345" y1="293" x2="536" y2="293" class="arrow" marker-end="url(#end)"/>
+<rect x="321" y="247" width="243" height="26" fill="white" opacity="0.93"/>
+<text class="msg" x="442" y="269" text-anchor="middle">2 snapshot acl_epoch=5</text>
+<line x1="539" y1="371" x2="348" y2="371" class="return" marker-end="url(#return)"/>
+<rect x="336" y="325" width="212" height="26" fill="white" opacity="0.93"/>
+<text class="msg" x="442" y="347" text-anchor="middle">3 preliminary allow</text>
+<line x1="761" y1="449" x2="952" y2="449" class="arrow" marker-end="url(#end)"/>
+<rect x="726" y="403" width="263" height="26" fill="white" opacity="0.93"/>
+<text class="msg" x="858" y="425" text-anchor="middle">4 revoke READ for Reader</text>
+<line x1="955" y1="527" x2="556" y2="527" class="arrow" marker-end="url(#end)"/>
+<rect x="622" y="481" width="263" height="26" fill="white" opacity="0.93"/>
+<text class="msg" x="754" y="503" text-anchor="middle">5 revoke grant + epoch 6</text>
+<line x1="553" y1="605" x2="952" y2="605" class="return" marker-end="url(#return)"/>
+<rect x="658" y="559" width="191" height="26" fill="white" opacity="0.93"/>
+<text class="msg" x="754" y="581" text-anchor="middle">6 COMMIT complete</text>
+<line x1="345" y1="683" x2="536" y2="683" class="arrow" marker-end="url(#end)"/>
+<rect x="316" y="637" width="253" height="26" fill="white" opacity="0.93"/>
+<text class="msg" x="442" y="659" text-anchor="middle">7 recheck before output</text>
+<line x1="539" y1="761" x2="348" y2="761" class="return" marker-end="url(#return)"/>
+<rect x="326" y="715" width="232" height="26" fill="white" opacity="0.93"/>
+<text class="msg" x="442" y="737" text-anchor="middle">8 epoch 6 != 5 → deny</text>
+<line x1="331" y1="839" x2="140" y2="839" class="return" marker-end="url(#return)"/>
+<rect x="87" y="793" width="294" height="26" fill="white" opacity="0.93"/>
+<text class="msg" x="234" y="815" text-anchor="middle">9 abort / deny, no citation</text>
+<text class="note" x="25" y="905">Concurrency test AT-04; streaming withheld until final gate.</text>
+</svg>

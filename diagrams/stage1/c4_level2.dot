@@ -1,0 +1,30 @@
+digraph C2 {
+ graph [fontname="DejaVu Sans", bgcolor="white", pad="0.20", rankdir=TB, nodesep="0.27", ranksep="0.42", splines=ortho, fontsize=22, fontcolor="#14263D", label="C4 Level 2 | Контейнери та межі відповідальності", labelloc=t, compound=true];
+ node [fontname="DejaVu Sans", shape=box, style="rounded,filled", fillcolor="#EFF5FA", color="#496987", penwidth=1.1, fontcolor="#15293F", fontsize=11.5, margin="0.15,0.10"];
+ edge [fontname="DejaVu Sans", color="#6B7A89", arrowsize=.6, penwidth=1.0];
+ user [label="Користувач\n(браузер)", fillcolor="#FFFFFF"];
+ subgraph cluster_control {
+  label="CONTROL PLANE | політики, процеси, агентна логіка"; color="#6E9CC0"; style="rounded,dashed"; bgcolor="#F7FBFF"; fontname="DejaVu Sans"; fontsize=12;
+  ui [label="Web UI\nПошук / завантаження / цитати"];
+  api [label="FastAPI API\nКонтракти / JWT / ACL / guardrails", fillcolor="#E7F0FB"];
+  orch [label="LangGraph Orchestrator\nState / retrieval / policy gates", fillcolor="#E7F0FB"];
+  ingestion [label="Ingestion Worker\nExtract / OCR / chunk / ACL", fillcolor="#E7F0FB"];
+ }
+ subgraph cluster_data {
+  label="DATA PLANE | моделі, сховища, індекси"; color="#73A88D"; style="rounded,dashed"; bgcolor="#F7FCF8"; fontname="DejaVu Sans"; fontsize=12;
+  retrieval [label="Retrieval Service\nVector + graph + ACL filtering", fillcolor="#EDF9F2"];
+  llm [label="Local LLM Serving\nvLLM / SGLang (offline)", fillcolor="#EDF9F2"];
+  emb [label="Local Embeddings\nOffline encoder", fillcolor="#EDF9F2"];
+  qdrant [label="Qdrant\nVector index", fillcolor="#EDF9F2"];
+  neo [label="Neo4j\nKnowledge Graph", fillcolor="#EDF9F2"];
+  pg [label="PostgreSQL\nDocument metadata / ACL / jobs", fillcolor="#EDF9F2"];
+  blob [label="Object Storage\nOriginals / extracts", fillcolor="#EDF9F2"];
+ }
+ obs [label="Observability\nOpenTelemetry + metrics\n(без текстів секретних документів)", fillcolor="#FFF7E9", fontsize=10.5];
+ user -> ui; ui -> api; api -> orch; api -> ingestion;
+ orch -> retrieval; orch -> llm;
+ retrieval -> qdrant; retrieval -> neo; retrieval -> pg;
+ ingestion -> blob; ingestion -> emb; ingestion -> pg; ingestion -> neo; ingestion -> qdrant;
+ emb -> qdrant [style=dashed];
+ orch -> obs [style=dotted]; api -> obs [style=dotted];
+}

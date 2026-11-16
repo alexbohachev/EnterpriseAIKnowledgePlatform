@@ -1,0 +1,2 @@
+{"id":"cyan-launch","question":"What is the approved launch date for Project CYAN?","expected_doc_ids":["18578185-9c89-49ff-b926-ac46de05fcdc"],"must_include":["2031"],"expected_abstain":false}
+{"id":"orion-ocr-launch","question":"What is the launch date of Project ORION?","expected_doc_ids":["aff79bbe-52de-4a73-b568-f2bbbad92e72"],"must_include":["2032"],"expected_abstain":false}

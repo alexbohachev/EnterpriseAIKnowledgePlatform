@@ -1,0 +1,24 @@
+sequenceDiagram
+autonumber
+participant A0 as Reader
+participant A1 as FastAPI
+participant A2 as LangGraph
+participant A3 as ACL / PG
+participant A4 as Retrieval / Qdrant + Neo4j
+participant A5 as Local LLM
+Note over A0,A5: Denied or insufficient evidence → abstain; no secret payload returned.
+A0 ->> A1: 1 POST /query  + JWT
+A1 ->> A3: 2 check claims + grant epoch
+A3 -->> A1: 3 verified principal
+A1 ->> A2: 4 invoke query graph
+A2 ->> A4: 5 allowed doc IDs, active runs
+A4 -->> A2: 6 chunk + graph candidate IDs
+A2 ->> A3: 7 verify ALL provenance
+A3 -->> A2: 8 permitted evidence
+A2 ->> A5: 9 generate from evidence only
+A5 -->> A2: 10 answer draft + IDs
+A2 ->> A3: 11 final ACL epoch + citations
+A3 -->> A2: 12 allow / revoke
+A2 -->> A1: 13 safe answer OR abstain
+A1 -->> A0: 14 answer, citations, trace_id
+Note over A0,A5: No streaming before final ACL validation in MVP.

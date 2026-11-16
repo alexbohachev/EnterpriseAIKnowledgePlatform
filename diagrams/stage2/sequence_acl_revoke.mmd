@@ -1,0 +1,18 @@
+sequenceDiagram
+autonumber
+participant A0 as Reader
+participant A1 as Query / Agent
+participant A2 as ACL / PG
+participant A3 as Owner
+participant A4 as Admin API
+Note over A0,A4: Two interleaved operations, one source of truth for ACL.
+A0 ->> A1: 1 start request
+A1 ->> A2: 2 snapshot acl_epoch=5
+A2 -->> A1: 3 preliminary allow
+A3 ->> A4: 4 revoke READ for Reader
+A4 ->> A2: 5 revoke grant + epoch 6
+A2 -->> A4: 6 COMMIT complete
+A1 ->> A2: 7 recheck before output
+A2 -->> A1: 8 epoch 6 != 5 → deny
+A1 -->> A0: 9 abort / deny, no citation
+Note over A0,A4: Concurrency test AT-04; streaming withheld until final gate.

@@ -1,0 +1,25 @@
+sequenceDiagram
+autonumber
+participant A0 as Owner
+participant A1 as FastAPI
+participant A2 as PG / Jobs
+participant A3 as Object Store
+participant A4 as Worker
+participant A5 as Qdrant
+participant A6 as Neo4j
+Note over A0,A6: Writes staged in both indexes. Readers see only PG active_index_run_id.
+A0 ->> A1: 1 POST PDF + ACL
+A1 ->> A2: 2 draft version + PENDING job
+A1 ->> A3: 3 save immutable PDF
+A1 -->> A0: 4 document_id + job_id
+A4 ->> A2: 5 lease job (SKIP LOCKED)
+A2 -->> A4: 6 version + checksum
+A4 ->> A3: 7 load PDF; OCR / chunk
+A3 -->> A4: 8 page text + source IDs
+A4 ->> A5: 9 stage vectors(run_id)
+A4 ->> A6: 10 stage scoped graph(run_id)
+A4 ->> A5: 11 verify counts / provenance
+A4 ->> A6: 12 verify edges / provenance
+A4 ->> A2: 13 atomic publish pointer
+A2 -->> A4: 14 READY or error
+Note over A0,A6: Failure → FAILED / capped retry; last READY run is unchanged.

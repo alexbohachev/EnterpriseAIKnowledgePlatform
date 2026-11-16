@@ -1,0 +1,18 @@
+digraph C1 {
+  graph [fontname="DejaVu Sans", bgcolor="white", pad="0.25", ranksep="0.80", nodesep="0.42", rankdir=TB, splines=polyline, label="C4 Level 1 | Контекст системи", labelloc=t, fontsize=24, fontcolor="#14263D"];
+  node [fontname="DejaVu Sans", shape=box, style="rounded,filled", fillcolor="#F3F7FB", color="#496987", penwidth=1.4, fontcolor="#15293F", fontsize=13, margin="0.20,0.13"];
+  edge [fontname="DejaVu Sans", color="#445D76", fontsize=11, arrowsize=.75];
+  employee [label="Співробітник\n[користувач]", fillcolor="#EFF7FF"];
+  admin [label="Адміністратор\n[оператор платформи]", fillcolor="#EFF7FF"];
+  platform [label="Enterprise AI Knowledge Platform\n[самостійно розгорнута система]\nЗавантаження, GraphRAG, відповіді з цитатами", fillcolor="#E5F5EC", color="#357657", penwidth=2, fontsize=15];
+  idp [label="Корпоративна IAM/IdP\n[внутрішня система]\nOIDC / облікові записи", fillcolor="#FFF8EA"];
+  sources [label="ERP / CRM / файлові сховища\n[джерела корпоративних даних]\nДля MVP: ручне завантаження", fillcolor="#FFF8EA"];
+  employee -> platform [label="Пошук, питання, перегляд джерел"];
+  admin -> platform [label="Керування документами, ACL, аудит"];
+  platform -> idp [label="Перевірка ідентичності (опція MVP)", style=dashed];
+  sources -> platform [label="Внутрішнє імпортування (наступний реліз)", style=dashed];
+  note [label="Межа довіри: корпоративний / air-gapped контур\nЗовнішніх LLM API та мережевого egress немає", shape=note, color="#A1AAB2", fillcolor="#FAFAFA", fontsize=11];
+  platform -> note [style=dotted, arrowhead=none];
+  {rank=same employee admin};
+  {rank=same idp sources};
+}

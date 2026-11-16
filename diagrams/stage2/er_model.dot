@@ -1,0 +1,16 @@
+digraph G {
+ graph [label="ER · PostgreSQL source of truth (logical schema)",labelloc=t,fontsize=20,fontname="Noto Sans",ranksep="0.53",nodesep="0.36",pad="0.22",bgcolor=white,splines=polyline];
+ node [shape=record,style="filled",fillcolor="#edf4f9",color="#456c8d",fontsize=11,fontname="Noto Sans",margin="0.10,0.08"];
+ edge [color="#5c7789",arrowsize=.55,fontname="Noto Sans",fontsize=10];
+ users [label="{users|PK user_id\lsubject_id (unique)\lstatus\l}"];
+ groups [label="{groups|PK group_id\lname\l}"];
+ mem [label="{group_membership|PK membership_id\lFK user_id\lFK group_id\l}"];
+ doc [label="{documents|PK document_id\lFK owner_id\lclassification\lacl_epoch\lactive_index_run_id\l}",fillcolor="#e1f0e6"];
+ dv [label="{document_versions|PK version_id\lFK document_id\lsha256\lobject_uri\lcreated_at\l}"];
+ grant [label="{access_grants|PK grant_id\lFK document_id\lprincipal_type + id\lpermission\l}",fillcolor="#fff0d9"];
+ jobs [label="{ingestion_jobs|PK job_id\lFK version_id\lstatus, lease_until\lattempt_count\lindex_run_id\l}"];
+ chunk [label="{chunks|PK chunk_id\lFK version_id\lpage_no, ordinal\ltext_object_uri\lindex_run_id\l}"];
+ mentions [label="{entity_mentions|PK mention_id\lFK chunk_id\lentity_local_id\lname_norm\lspan_ref\l}"];
+ audit [label="{audit_events|PK audit_id\lFK actor_user_id\ldocument_id?\laction, decision\ltrace_id, timestamp\l}",fillcolor="#f2eafa"];
+ users->mem; groups->mem; users->doc; doc->dv; doc->grant; dv->jobs; dv->chunk; chunk->mentions; users->audit;
+}

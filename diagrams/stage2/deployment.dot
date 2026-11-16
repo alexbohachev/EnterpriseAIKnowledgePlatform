@@ -1,0 +1,32 @@
+digraph G {
+ graph [label="Deployment · single-node on-prem MVP (logical zones)",labelloc=t,fontsize=20,fontname="Noto Sans",bgcolor=white,pad="0.25",ranksep="0.55",nodesep="0.2",splines=polyline];
+ node [shape=box,style="rounded,filled",fontname="Noto Sans",fontsize=12,color="#476581",margin="0.15,0.10"];
+ edge [fontname="Noto Sans",fontsize=10,color="#566f83",arrowsize=.65];
+ user [label="Employee / Owner\nBrowser, internal LAN",fillcolor="#e1eaf6"];
+ subgraph cluster_host {label="On-prem host · Docker Compose · private VLAN";fontname="Noto Sans";fontsize=16;color="#7c91a8";style="rounded";
+  subgraph cluster_edge {label="DMZ / ingress";fontname="Noto Sans";fontsize=13;color="#d3a581";style="rounded,dashed";
+   proxy [label="TLS Reverse Proxy\ninternal ingress",fillcolor="#f9e7d9"];
+  }
+  subgraph cluster_ctrl {label="Application / Control Plane";fontname="Noto Sans";fontsize=13;color="#81a4be";style="rounded,dashed";
+   api [label="FastAPI\nOIDC / JWT / ACL",fillcolor="#e5f2fb"];
+   orch [label="LangGraph\nretrieval + guardrails",fillcolor="#e5f2fb"];
+   worker [label="Ingestion Worker\nPDF / offline OCR",fillcolor="#e5f2fb"];
+  }
+  subgraph cluster_data {label="Data Plane · persistent internal network";fontname="Noto Sans";fontsize=13;color="#7fa99b";style="rounded,dashed";
+    pg [label="PostgreSQL\nACL + jobs + metadata",fillcolor="#e3f1e8"];
+    obj [label="Object store\nPDF / extracted text",fillcolor="#e3f1e8"];
+    vec [label="Qdrant\nversioned vectors",fillcolor="#e3f1e8"];
+    neo [label="Neo4j\nprovenance graph",fillcolor="#e3f1e8"];
+    gpu [label="GPU inference host*\nlocal LLM + embeddings",fillcolor="#dbede9"];
+  }
+  subgraph cluster_ops {label="Ops (restricted)";fontname="Noto Sans";fontsize=13;color="#aa91b6";style="rounded,dashed";
+   obs [label="OTel Collector / Grafana\naggregated metrics",fillcolor="#eee5f4"];
+  }
+ }
+ user -> proxy -> api -> orch;
+ api -> pg; api -> obj; orch -> pg; orch -> vec; orch -> neo; orch -> gpu;
+ worker -> pg; worker -> obj; worker -> vec; worker -> neo; worker -> gpu;
+ api -> obs [style=dotted]; orch -> obs [style=dotted]; worker -> obs [style=dotted];
+ firewall [label="Host firewall / offline boundary\nDENY outbound · pre-staged images",shape=note,fillcolor="#f8e2e0",color="#bd746b"];
+ firewall -> proxy [style=dashed,arrowhead=none];
+}

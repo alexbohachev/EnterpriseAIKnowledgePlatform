@@ -1,0 +1,10 @@
+apiVersion: 1
+providers:
+  - name: EAKP
+    orgId: 1
+    folder: EAKP
+    type: file
+    disableDeletion: true
+    editable: false
+    options:
+      path: /var/lib/grafana/dashboards
