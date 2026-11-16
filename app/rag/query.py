@@ -32,11 +32,42 @@ class QueryEngine:
         self.chat = chat
         self.store = store
 
-    def _eligible_documents(self, db: Session, user: User) -> dict[str, str]:
-        # Bounded MVP scan; production implementation should use indexed SQL ACL joins.
+    def _eligible_documents(self, db: Session, user: User, cap: int = 10_000) -> dict[str, str]:
+        # ACL before recency cap: do not drop older accessible docs because newer ones exist globally.
         docs = db.scalars(select(Document).where(Document.active_index_run_id.isnot(None))
-                           .order_by(Document.created_at.desc()).limit(2000)).all()
-        return {d.id: d.active_index_run_id for d in docs if allowed(db, user, d, 'read')}
+                           .order_by(Document.created_at.desc())).all()
+        eligible = {d.id: d.active_index_run_id for d in docs if allowed(db, user, d, 'read')}
+        if len(eligible) <= cap:
+            return eligible
+        ordered = [d.id for d in docs if d.id in eligible]
+        return {doc_id: eligible[doc_id] for doc_id in ordered[:cap]}
+
+    @staticmethod
+    def _merge_retrieval_ids(seed_ids: list[str], graph_ids: list[str], limit: int) -> list[str]:
+        """Interleave vector and graph hits so graph expansion is not truncated away."""
+        seeds = list(dict.fromkeys(seed_ids))
+        graph_only = [cid for cid in dict.fromkeys(graph_ids) if cid not in seeds]
+        graph_slots = min(len(graph_only), max(1, limit // 2)) if graph_only else 0
+        vector_slots = limit - graph_slots
+        merged: list[str] = []
+        seen: set[str] = set()
+
+        def add(cid: str) -> None:
+            if cid not in seen:
+                seen.add(cid)
+                merged.append(cid)
+
+        for cid in seeds[:vector_slots]:
+            add(cid)
+        for cid in graph_only:
+            if len(merged) >= limit:
+                break
+            add(cid)
+        for cid in seeds[vector_slots:]:
+            if len(merged) >= limit:
+                break
+            add(cid)
+        return merged[:limit]
 
     def _excerpts(self, db: Session, user: User, chunk_ids: list[str],
                   published: dict[str, str]) -> list[dict]:
@@ -71,7 +102,8 @@ class QueryEngine:
             raise ValueError('Embedding service returned no query vector')
         seed_ids = self.vectors.search(embedded[0], list(published), list(published.values()), limit=limit)
         expanded_ids = self.graph.expand(seed_ids, limit=limit * 3) if seed_ids else []
-        return self._excerpts(db, user, seed_ids + expanded_ids, published)[:limit]
+        merged_ids = self._merge_retrieval_ids(seed_ids, expanded_ids, limit)
+        return self._excerpts(db, user, merged_ids, published)[:limit]
 
     def generate(self, db: Session, user: User, question: str, items: list[dict]) -> QueryResult:
         """Second LangGraph stage: grounded generation then last-moment ACL revalidation."""

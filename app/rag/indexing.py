@@ -7,7 +7,7 @@ from __future__ import annotations
 import time
 from uuid import uuid4
 from datetime import timedelta
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 from ..models import (IngestionJob, Chunk, DocumentVersion, Document, AuditEvent, utc_now)
 from ..storage import LocalStorage
@@ -85,17 +85,21 @@ def run_forever(poll_seconds=3.0):
     model = OllamaLocal(cfg.ollama_url, cfg.embedding_model, cfg.chat_model)
     vector = QdrantLocal(cfg.qdrant_url, cfg.qdrant_collection, cfg.embedding_dim)
     graph = Neo4jLocal(cfg.neo4j_uri, cfg.neo4j_user, cfg.neo4j_password)
-    print('Stage 4 indexer ready: waiting for TEXT_EXTRACTED documents', flush=True)
+    print('Stage 4 indexer ready: TEXT_EXTRACTED and stale INDEXING recovery', flush=True)
     try:
         while True:
             with factory() as session:
+                now = utc_now()
                 job = session.scalar(select(IngestionJob)
-                    .where(IngestionJob.status == 'TEXT_EXTRACTED')
+                    .where(or_(
+                        IngestionJob.status == 'TEXT_EXTRACTED',
+                        (IngestionJob.status == 'INDEXING') & (IngestionJob.lease_until < now),
+                    ))
                     .order_by(IngestionJob.created_at).with_for_update(skip_locked=True).limit(1))
                 if job:
                     # Claim is not durable until commit; never run multiple indexers on SQLite.
                     job.status = 'INDEXING'
-                    job.lease_until = utc_now() + timedelta(minutes=30)
+                    job.lease_until = now + timedelta(minutes=30)
                     job.attempts += 1
                     session.commit()
                     job_id = job.id

@@ -27,17 +27,43 @@ def _json_passed(path: Path) -> bool:
 reports = root / 'reports'
 live_smoke = _json_passed(reports / 'integration_smoke.json')
 live_ocr = _json_passed(reports / 'ocr_live_e2e.json')
-live_load = (reports / 'load_query.json').is_file()
-def _rag_eval_ok(path: Path) -> bool:
+def _rag_eval_ok(path: Path, min_pass_rate: float = 1.0) -> bool:
     if not path.is_file():
         return False
     try:
         body = json.loads(path.read_text(encoding='utf-8'))
-        return body.get('failed', 1) == 0 and body.get('completed', 0) > 0
+        rate = body.get('quality_pass_rate')
+        if rate is None and body.get('completed', 0) > 0:
+            rate = 1.0 - (body.get('quality_failures', 0) / body['completed'])
+        return (
+            body.get('failed', 1) == 0
+            and body.get('completed', 0) > 0
+            and rate is not None
+            and rate >= min_pass_rate
+        )
+    except (json.JSONDecodeError, OSError):
+        return False
+
+def _load_query_ok(path: Path, max_p95_ms: float = 60_000) -> bool:
+    if not path.is_file():
+        return False
+    try:
+        body = json.loads(path.read_text(encoding='utf-8'))
+        p95 = (body.get('latency_ms') or {}).get('p95')
+        ratio = body.get('http_success_ratio')
+        return (
+            body.get('mode') == 'query'
+            and ratio is not None
+            and ratio >= 0.99
+            and p95 is not None
+            and p95 <= max_p95_ms
+        )
     except (json.JSONDecodeError, OSError):
         return False
 
 live_rag = _rag_eval_ok(reports / 'rag_eval.json')
+live_rag_bob = _rag_eval_ok(reports / 'rag_eval_bob_acl.json')
+live_load_ok = _load_query_ok(reports / 'load_query.json')
 
 blockers = []
 if not live_smoke:
@@ -50,8 +76,12 @@ blockers.extend([
     'Formal GPU/tokens-per-second benchmark (not client HTTP only)',
     'Air-gap and security operator evidence',
 ])
-if live_smoke and not live_load:
-    blockers.append('Query load benchmark artifact (load_query.json)')
+if live_smoke and not live_rag:
+    blockers.append('RAG evaluation failed quality gate (rag_eval.json)')
+if live_smoke and not live_rag_bob:
+    blockers.append('Bob ACL RAG evaluation failed quality gate (rag_eval_bob_acl.json)')
+if live_smoke and not live_load_ok:
+    blockers.append('Query load benchmark failed quality gate (load_query.json)')
 
 live_status = 'EXECUTED' if live_smoke else 'NOT_EXECUTED'
 
@@ -66,8 +96,9 @@ record={
   'test_scope':'SQLite+HTTP tests with simulated AI/index adapters; actual local Tesseract OCR on synthetic scans',
   'live_qdrant_neo4j_ollama_e2e': live_status,
   'live_ocr_e2e': 'EXECUTED' if live_ocr else 'NOT_EXECUTED',
-  'live_rag_eval': 'EXECUTED' if live_rag else 'NOT_EXECUTED',
-  'live_load_query_report': 'PRESENT' if live_load else 'MISSING',
+  'live_rag_eval': 'PASS' if live_rag else 'NOT_EXECUTED',
+  'live_rag_bob_acl': 'PASS' if live_rag_bob else 'NOT_EXECUTED',
+  'live_load_query_report': 'PASS' if live_load_ok else ('PRESENT' if (reports / 'load_query.json').is_file() else 'MISSING'),
   'air_gap_certification':'NOT_EXECUTED',
   'gpu_inference_benchmark':'NOT_EXECUTED',
   'security_pentest':'NOT_EXECUTED',
@@ -76,8 +107,9 @@ record={
   'evidence_files': {
     'integration_smoke': str(reports / 'integration_smoke.json') if live_smoke else None,
     'ocr_live_e2e': str(reports / 'ocr_live_e2e.json') if live_ocr else None,
-    'load_query': str(reports / 'load_query.json') if live_load else None,
+    'load_query': str(reports / 'load_query.json') if live_load_ok else None,
     'rag_eval': str(reports / 'rag_eval.json') if live_rag else None,
+    'rag_eval_bob_acl': str(reports / 'rag_eval_bob_acl.json') if live_rag_bob else None,
   },
 }
 out=root/'reports/stage8_preflight.json'

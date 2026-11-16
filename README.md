@@ -2,7 +2,7 @@
 
 **Цей пакет розширює Stage 7. Він НЕ є підтверджено прийнятим Production-продуктом.**
 
-Додано локальний OCR сканованих PDF; є фактичні локальні тести OCR, а HTTP/SQLite/GraphRAG ланцюжок перевіряється зі штучними адаптерами. **Повне інтеграційне Docker/LLM E2E залишається відкритим**, Docker Engine недоступний у середовищі підготовки.
+Додано локальний OCR сканованих PDF; HTTP/SQLite/GraphRAG перевіряється зі штучними адаптерами, а **live Docker E2E/OCR/RAG/load** задокументовані в `docs/Stage8_Submission_Checklist_UA.md` і релізі [`stage8-live-evidence-2026-11-16`](https://github.com/alexbohachev/EnterpriseAIKnowledgePlatform/releases/tag/stage8-live-evidence-2026-11-16). Air-gap, семантичний граф, multimodal і GPU-benchmark лишаються OPEN.
 
 Основний план і обмеження: `docs/Stage8_Acceptance_Gap_Analysis_UA.md`.  
 Зібрати локальні докази: `python scripts/stage8_preflight.py`.  
@@ -13,7 +13,7 @@
 **Stage 7 · Defense / submission candidate (Ukrainian docs, Python sources)**
 
 ## IMPORTANT — acceptance status
-The 7-stage **documentation and code packaging** cycle is complete, but this is **NOT a verified, ready-for-production product or a fully accepted OTUS submission**. The Python test suite has 37 passing tests in this environment using SQLite/fake adapters. Docker Engine was unavailable; no executed full service/LLM E2E test, Qdrant+Neo4j+Ollama inference benchmark, real p95/RPS, verified air-gap, or pen test evidence is included. Scanned PDFs/OCR and image/drawing understanding are still **not implemented**, and the existing graph is a lexical GraphRAG-lite, not a full extracted semantic knowledge graph. Complete these gaps or agree on a reduced scope with the instructor before claiming all rubric requirements satisfied.
+The 7-stage **documentation and code packaging** cycle is complete, but this is **NOT a verified, ready-for-production product or a fully accepted OTUS submission**. CI runs `pytest` on SQLite/fake adapters (see `.github/workflows/ci.yml`). A **synthetic Docker live evidence bundle** exists (release tag above); it does not replace production acceptance. Verified air-gap enforcement, pen testing, semantic knowledge graph quality, diagram/table understanding, and GPU/token benchmarks remain **OPEN / NOT MEASURED** unless your operator environment reproduces and extends the bundled reports.
 
 ## What is included
 - `app/` — production-inspired FastAPI, ACL, PDF text extraction worker, indexer, GraphRAG-lite, LangGraph orchestration, security controls and observability.
@@ -32,7 +32,7 @@ python -m pip install -e '.[dev]'
 python -m pytest -q
 python scripts/final_preflight.py
 ```
-Expected verified unit/API suite in the author's Python runtime: **37 passed**. These tests do not prove multi-service integration.
+Run `python -m pytest -q` locally or rely on GitHub Actions CI. Passing unit tests do not prove multi-service integration without your Docker runbook artifacts under `reports/`.
 
 ## Run in an isolated Docker test environment (operator required)
 ```bash

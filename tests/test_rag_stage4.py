@@ -156,3 +156,58 @@ def test_mid_generation_acl_revoke_discards_answer(context, tokens):
 def test_lexical_graph_entity_heuristic_is_real_but_limited():
     assert 'NLP' in extract_entities('NLP and the National Bank published an update.')
     assert 'National Bank' in extract_entities('NLP and the National Bank published an update.')
+
+
+def test_merge_retrieval_ids_reserves_graph_slots_when_vectors_fill_limit():
+    seeds = [f'v{i}' for i in range(6)]
+    graph_hits = ['g-only', 'v0']
+    merged = QueryEngine._merge_retrieval_ids(seeds, graph_hits, limit=6)
+    assert 'g-only' in merged
+    assert len(merged) == 6
+    assert merged[0] == 'v0'
+
+
+class SaturatingVectors(FakeVectors):
+    def search(self, vector, document_ids, run_ids, limit=8):
+        cid = next(iter(self.records))
+        return [cid] * limit
+
+
+def test_retrieve_includes_graph_neighbor_when_vector_hits_saturate_limit(context, tokens):
+    data, vector, graph, ok = _indexed(context, tokens, vectors=SaturatingVectors())
+    other, _, _, ok2 = _indexed(context, tokens, person='alice', vectors=vector, graph=graph)
+    assert ok and ok2
+    neighbor = next(
+        cid for cid, r in vector.records.items() if r['payload']['document_id'] == other['document_id']
+    )
+    graph.neighbors = [neighbor]
+    with context['sessions']() as db:
+        user = db.get(User, context['users']['alice'])
+        engine = QueryEngine(FakeEmbed(), vector, graph, FakeChat(), context['store'])
+        items = engine.retrieve(db, user, 'report', limit=6)
+        chunk_ids = [i['chunk_id'] for i in items]
+        assert neighbor in chunk_ids
+
+
+def test_index_job_resumes_when_status_already_indexing(context, tokens):
+    data, vectors, graph, _ = _indexed(context, tokens, vectors=FakeVectors(), graph=FakeGraph())
+    vectors.records.clear()
+    graph.entries.clear()
+    with context['sessions']() as db:
+        job = db.get(IngestionJob, data['job_id'])
+        job.status = 'TEXT_EXTRACTED'
+        job.index_run_id = None
+        job.lease_until = None
+        doc = db.get(Document, data['document_id'])
+        doc.active_index_run_id = None
+        db.query(Chunk).filter_by(version_id=data['version_id']).update({'index_run_id': None})
+        db.commit()
+    with context['sessions']() as db:
+        job = db.get(IngestionJob, data['job_id'])
+        job.status = 'INDEXING'
+        from app.models import utc_now
+        from datetime import timedelta
+        job.lease_until = utc_now() + timedelta(minutes=30)
+        db.commit()
+        assert index_job(db, context['store'], data['job_id'], FakeEmbed(), vectors, graph)
+        assert db.get(IngestionJob, data['job_id']).status == 'INDEXED'

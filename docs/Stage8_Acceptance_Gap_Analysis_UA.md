@@ -7,7 +7,7 @@
 - Проведено *справжній локальний запуск Tesseract* на синтетичному PDF (у режимі тестів).
 
 ## Не реалізовано / не підтверджено
-- На цій машині немає Docker Engine. **Немає підтвердженого** Docker Compose, PostgreSQL+Qdrant+Neo4j+Ollama, LangGraph E2E, air-gap та load benchmark.
+- **Live Docker на синтетичному стенді (Windows, листопад 2026):** `integration_smoke.json`, `ocr_live_e2e.json`, `rag_eval*.json`, `load_query.json` — див. `docs/Stage8_Submission_Checklist_UA.md` і GitHub Release `stage8-live-evidence-2026-11-16`. Це **не** заміна production air-gap, pen test чи GPU/token benchmark.
 - OCR — це **видобування тексту**, а не розуміння креслень, складних таблиць чи мультимодальний VLM.
 - GraphRAG — lexical entity co-mention, а не повноцінне виявлення семантичних відносин.
 - Guardrails й обмеження OCR не є песочницею для довільних PDF; потрібні окремий sandbox, AV сканування і threat modeling.

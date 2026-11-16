@@ -106,6 +106,8 @@ def test_rag_evaluation_uses_only_explicit_ground_truth_not_guessing():
     assert data['document_recall_at_returned'] == 1
     assert data['abstention_accuracy'] == 1
     assert data['citation_label_validity'] == 1
+    assert data['quality_failures'] == 0
+    assert data['quality_pass_rate'] == 1
     assert 'Not an automated' in data['limitations']
 
 
@@ -116,6 +118,8 @@ def test_rag_evaluation_detects_unsupported_citation_label():
                    'citations':[{'source':'S1','document_id':'doc2'}]})
     assert data['citation_label_validity'] == 0
     assert data['document_recall_at_returned'] == 0
+    assert data['quality_failures'] == 1
+    assert data['quality_pass_rate'] == 0
 
 
 def test_client_load_summary_and_nearest_rank_percentiles():

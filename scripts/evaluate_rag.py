@@ -19,6 +19,21 @@ import httpx
 REF = re.compile(r'\[S(\d+)\]')
 
 
+def case_quality_pass(row: dict, case: dict) -> bool:
+    if row.get('status') != 'ok':
+        return False
+    if row.get('citation_labels_valid') is False:
+        return False
+    expected = set(case.get('expected_doc_ids') or [])
+    if expected and row.get('document_recall', 0) < 1.0:
+        return False
+    if case.get('expected_abstain') and not row.get('retrieval_abstention_pass'):
+        return False
+    if case.get('must_include') and not row.get('required_text_pass'):
+        return False
+    return True
+
+
 def evaluate_cases(cases: list[dict], ask) -> dict:
     stats = Counter()
     rows = []
@@ -62,12 +77,21 @@ def evaluate_cases(cases: list[dict], ask) -> dict:
                 row['required_text_pass'] = match
                 stats['required_text_correct'] += int(match)
                 stats['required_text_cases'] += 1
+            row['quality_pass'] = case_quality_pass(row, case)
+            if not row['quality_pass']:
+                stats['quality_failures'] += 1
         except (KeyError, TypeError, ValueError, httpx.HTTPError):
             row['status'] = 'failed_request_or_schema'
             stats['failed_requests'] += 1
+            stats['quality_failures'] += 1
         rows.append(row)
     return {
         'cases': len(cases), 'completed': stats['completed'], 'failed': stats['failed_requests'],
+        'quality_failures': stats['quality_failures'],
+        'quality_pass_rate': (
+            round((stats['completed'] - stats['quality_failures']) / stats['completed'], 4)
+            if stats['completed'] else None
+        ),
         'citation_label_validity': (stats['valid_citation_labels'] / stats['completed'] if stats['completed'] else None),
         'document_recall_at_returned': (round(stats['recall_sum'] / stats['recall_cases'], 4) if stats['recall_cases'] else None),
         'abstention_accuracy': (stats['abstention_correct'] / stats['abstention_cases'] if stats['abstention_cases'] else None),
@@ -95,6 +119,7 @@ def main():
     p.add_argument('--url', default='http://127.0.0.1:8000')
     p.add_argument('--output', default='reports/rag_eval.json')
     p.add_argument('--timeout', type=float, default=180)
+    p.add_argument('--min-quality-pass-rate', type=float, default=1.0)
     args = p.parse_args()
     token = os.getenv('EAKP_EVAL_TOKEN')
     if not token:
@@ -110,7 +135,11 @@ def main():
     dest.parent.mkdir(parents=True, exist_ok=True)
     dest.write_text(json.dumps(result, indent=2), encoding='utf-8')
     print(json.dumps({k: v for k, v in result.items() if k != 'records'}, indent=2))
-    sys.exit(0 if result['failed'] == 0 else 2)
+    quality_ok = (
+        result.get('quality_pass_rate') is not None
+        and result['quality_pass_rate'] >= args.min_quality_pass_rate
+    )
+    sys.exit(0 if result['failed'] == 0 and quality_ok else 2)
 
 
 if __name__ == '__main__':
