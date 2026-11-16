@@ -15,6 +15,16 @@ function Assert-LastExitCode {
     }
 }
 
+function Invoke-Python {
+    param(
+        [string]$Step,
+        [string[]]$ArgumentList = @()
+    )
+    Write-Host "==> $Step"
+    & $PythonExe @PythonPrefix @ArgumentList
+    Assert-LastExitCode -Step $Step
+}
+
 function Invoke-External {
     param(
         [string]$Step,
@@ -60,23 +70,34 @@ foreach ($pair in @(
     $email = $pair[0]
     $pw = $pair[1]
     Write-Host "==> create-user $email"
-    $createOut = ($pw | docker compose exec -T api python -m app.cli create-user --email $email --password-stdin 2>&1)
-    if ($LASTEXITCODE -ne 0 -and ($createOut -join ' ') -notmatch 'already exists') {
-        throw "Step failed: create-user $email (exit $LASTEXITCODE)"
+    $prevEap = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    $createOut = ($pw | docker compose exec -T api python -m app.cli 'create-user' --email $email --password-stdin 2>&1)
+    $createCode = $LASTEXITCODE
+    $ErrorActionPreference = $prevEap
+    if ($createCode -ne 0 -and (($createOut | Out-String) -notmatch 'already exists')) {
+        throw "Step failed: create-user $email (exit $createCode): $createOut"
     }
 }
 
-if (-not (Get-Command python -ErrorAction SilentlyContinue)) {
-    throw 'Host Python required for HTTP smoke/eval scripts'
+$PythonExe = $null
+$PythonPrefix = @()
+if (Get-Command py -ErrorAction SilentlyContinue) {
+    $PythonExe = 'py'
+    $PythonPrefix = @('-3')
+} elseif (Get-Command python -ErrorAction SilentlyContinue) {
+    $PythonExe = 'python'
+} else {
+    throw 'Host Python required (install Python 3.11+ or use py launcher)'
 }
 
-Invoke-External 'integration smoke' 'python' @(
+Invoke-Python 'integration smoke' @(
     'scripts/integration_smoke.py', '--accept-synthetic-write', '--url', 'http://127.0.0.1:8000'
 )
-Invoke-External 'OCR live smoke' 'python' @(
+Invoke-Python 'OCR live smoke' @(
     'scripts/ocr_live_smoke.py', '--accept-synthetic-write', '--url', 'http://127.0.0.1:8000'
 )
-Invoke-External 'seed eval corpus' 'python' @(
+Invoke-Python 'seed eval corpus' @(
     'scripts/seed_synthetic_eval_corpus.py', '--accept-synthetic-write', '--url', 'http://127.0.0.1:8000'
 )
 
@@ -84,7 +105,7 @@ Write-Host '==> RAG evaluation (Alice)'
 $tokenResp = Invoke-RestMethod -Method Post -Uri 'http://127.0.0.1:8000/api/v1/auth/token' `
     -ContentType 'application/json' -Body (@{email='alice@test.local';password=$alicePw} | ConvertTo-Json)
 $env:EAKP_EVAL_TOKEN = $tokenResp.access_token
-Invoke-External 'evaluate_rag Alice' 'python' @(
+Invoke-Python 'evaluate_rag Alice' @(
     'scripts/evaluate_rag.py', '--dataset', 'reports/eval_active_alice.jsonl', '--output', 'reports/rag_eval.json'
 )
 
@@ -92,20 +113,20 @@ Write-Host '==> RAG evaluation (Bob ACL)'
 $tokenBob = (Invoke-RestMethod -Method Post -Uri 'http://127.0.0.1:8000/api/v1/auth/token' `
     -ContentType 'application/json' -Body (@{email='bob@test.local';password=$bobPw} | ConvertTo-Json)).access_token
 $env:EAKP_EVAL_TOKEN = $tokenBob
-Invoke-External 'evaluate_rag Bob' 'python' @(
+Invoke-Python 'evaluate_rag Bob' @(
     'scripts/evaluate_rag.py', '--dataset', 'reports/eval_active_bob.jsonl', '--output', 'reports/rag_eval_bob_acl.json'
 )
 
 Write-Host '==> query load (client-side)'
 $env:EAKP_EVAL_TOKEN = $tokenResp.access_token
-Invoke-External 'load_test query' 'python' @(
+Invoke-Python 'load_test query' @(
     'scripts/load_test.py', '--mode', 'query', '--accept-real-load', '--seconds', '20', '--rps', '1',
     '--output', 'reports/load_query.json', '--url', 'http://127.0.0.1:8000'
 )
 
 $env:EAKP_REQUIRE_MVP_LIVE = '1'
-Invoke-External 'stage8 preflight' 'python' @('scripts/stage8_preflight.py', '--require-mvp-live')
-Invoke-External 'open requirements register' 'python' @('scripts/open_requirements_register.py')
+Invoke-Python 'stage8 preflight' @('scripts/stage8_preflight.py', '--require-mvp-live')
+Invoke-Python 'open requirements register' @('scripts/open_requirements_register.py')
 
 Write-Host '==> optional: bundle evidence ZIP (after mvp PASS)'
 Write-Host '    powershell -File scripts\bundle_stage8_evidence.ps1'

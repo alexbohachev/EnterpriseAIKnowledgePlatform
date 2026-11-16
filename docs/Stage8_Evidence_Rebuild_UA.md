@@ -22,6 +22,10 @@ gh release upload $tag reports\EAKP_Stage8_Live_Evidence_*.zip --clobber
 gh release upload $tag presentation\EAKP_OTUS_Defense_Stage8_UA.pptx --clobber
 ```
 
+Або один крок: `powershell -File scripts\publish_stage8_evidence.ps1`
+
+**Windows:** якщо `create-user` падає через stderr Docker — оновлений `demo_from_zero.ps1` (EAP + `'create-user'`). RAG eval: при `502` між кейсами є пауза `--case-delay 2` (навантаження Ollama).
+
 `scripts/verify_mvp_evidence.py` повинен повернути **0** перед bundle (MVP-артефакти + `git_commit` у preflight **дорівнює** `git rev-parse HEAD`).
 
 Перший `stage8_preflight.py --require-mvp-live` на чистому `reports/` не вимагає попереднього preflight-файлу — лише smoke/OCR/RAG/load JSON.

@@ -8,7 +8,11 @@ Set-Location $root
 
 if (-not $AllowStaleEvidence) {
     Write-Host '==> verify MVP evidence (reports must match current code gates)'
-    python scripts/verify_mvp_evidence.py
+    if (Get-Command py -ErrorAction SilentlyContinue) {
+        py -3 scripts/verify_mvp_evidence.py
+    } else {
+        python scripts/verify_mvp_evidence.py
+    }
     if ($LASTEXITCODE -ne 0) {
         throw @"
 MVP evidence verification failed (exit $LASTEXITCODE).

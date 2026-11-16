@@ -14,6 +14,7 @@ import os
 from pathlib import Path
 import re
 import sys
+import time
 import httpx
 
 REF = re.compile(r'\[S(\d+)\]')
@@ -93,10 +94,12 @@ def case_quality_pass(row: dict, case: dict) -> bool:
     return True
 
 
-def evaluate_cases(cases: list[dict], ask) -> dict:
+def evaluate_cases(cases: list[dict], ask, case_delay_s: float = 0.0) -> dict:
     stats = Counter()
     rows = []
     for i, case in enumerate(cases, 1):
+        if i > 1 and case_delay_s > 0:
+            time.sleep(case_delay_s)
         case_id = str(case.get('id', f'case-{i}'))[:64]
         expected = set(case.get('expected_doc_ids', []))
         required = list(case.get('must_include', []))
@@ -188,6 +191,7 @@ def main():
     p.add_argument('--output', default='reports/rag_eval.json')
     p.add_argument('--timeout', type=float, default=180)
     p.add_argument('--min-quality-pass-rate', type=float, default=1.0)
+    p.add_argument('--case-delay', type=float, default=2.0, help='Pause between live queries (Ollama stability)')
     args = p.parse_args()
     token = os.getenv('EAKP_EVAL_TOKEN')
     if not token:
@@ -196,7 +200,7 @@ def main():
     with httpx.Client(base_url=args.url, timeout=args.timeout, trust_env=False) as client:
         def ask(question):
             return client.post('/api/v1/query', headers={'Authorization': f'Bearer {token}'}, json={'question': question})
-        result = evaluate_cases(cases, ask)
+        result = evaluate_cases(cases, ask, case_delay_s=args.case_delay)
     result['generated_utc'] = datetime.now(timezone.utc).isoformat()
     result['runtime'] = 'live_http'
     dest = Path(args.output)
