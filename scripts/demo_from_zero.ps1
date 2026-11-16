@@ -107,4 +107,7 @@ $env:EAKP_REQUIRE_MVP_LIVE = '1'
 Invoke-External 'stage8 preflight' 'python' @('scripts/stage8_preflight.py', '--require-mvp-live')
 Invoke-External 'open requirements register' 'python' @('scripts/open_requirements_register.py')
 
-Write-Host 'Done. See reports/ and docs/Stage8_Open_Requirements_UA.md'
+Write-Host '==> optional: bundle evidence ZIP (after mvp PASS)'
+Write-Host '    powershell -File scripts\bundle_stage8_evidence.ps1'
+
+Write-Host 'Done. See reports/ and docs/Stage8_Evidence_Rebuild_UA.md'

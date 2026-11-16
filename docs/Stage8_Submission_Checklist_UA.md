@@ -58,10 +58,15 @@ python scripts/evaluate_rag.py --dataset reports/eval_active_bob.jsonl --output 
 - [ ] Підпис викладача / формальний ACCEPTED
 
 ## Перед завантаженням у OTUS
-1. `python scripts/stage8_preflight.py` — pytest + quality gates звітів
-2. Перегенерувати ZIP: `powershell -File scripts\bundle_stage8_evidence.ps1`
-3. Додати презентацію: `presentation/EAKP_OTUS_Defense_UA.pptx` (+ PDF)
-4. Перевірити, що в архіві **немає** `.env`, `.secrets/`, реальних PDF
-5. У захисті проговорити addendum: `docs/Stage8_Defense_Speech_Addendum_UA.md`
+1. `powershell -File scripts\demo_from_zero.ps1` — свіжі `reports/` + `mvp_acceptance: PASS`
+2. `python scripts/verify_mvp_evidence.py` — код і звіти узгоджені (`git_head` = `preflight_git_commit`)
+3. `powershell -File scripts\bundle_stage8_evidence.ps1` — **без** `-AllowStaleEvidence`
+4. Завантажити ZIP на Release з тим самим `git_commit`, що в manifest (див. `docs/Stage8_Evidence_Rebuild_UA.md`)
+
+**Застереження:** поточний ZIP на `stage8-submission-2026-11-17` застарів відносно `96cfae3+` — перезібрати після демо.
+
+5. Додати презентацію на Release: `presentation/EAKP_OTUS_Defense_Stage8_UA.pptx` (+ PDF)
+6. Перевірити, що в архіві **немає** `.env`, `.secrets/`, реальних PDF
+7. У захисті проговорити addendum: `docs/Stage8_Defense_Speech_Addendum_UA.md`
 
 **Висновок:** Stage 8 — інженерний MVP з документованими live-доказами на синтетичному стенді; **не** production-ready і **не** повна техприйомка OTUS.
