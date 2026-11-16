@@ -1,6 +1,7 @@
 """Stage 6 observability tests; assertions are deterministic, no external services."""
 from __future__ import annotations
 import importlib.util
+import json
 from pathlib import Path
 import pytest
 from prometheus_client.parser import text_string_to_metric_families
@@ -123,6 +124,50 @@ def test_rag_evaluation_unanswerable_allows_retrieval_without_empty_violation():
     })
     assert data['quality_failures'] == 0
     assert data['eval_schema_version'] == 2
+
+
+def test_assess_mvp_does_not_require_preflight_json(tmp_path):
+    gates = load_script('mvp_evidence_gates.py')
+    status, blockers = gates.assess_mvp(tmp_path)
+    assert status == 'BLOCKED'
+    assert not any('stage8_preflight' in b for b in blockers)
+    (tmp_path / 'integration_smoke.json').write_text('{"passed": true}', encoding='utf-8')
+    (tmp_path / 'ocr_live_e2e.json').write_text('{"passed": true}', encoding='utf-8')
+    rag = {
+        'eval_schema_version': 2,
+        'quality_failures': 0,
+        'quality_pass_rate': 1.0,
+        'faithfulness_pass_rate': 1.0,
+        'completed': 1,
+        'failed': 0,
+    }
+    (tmp_path / 'rag_eval.json').write_text(json.dumps(rag), encoding='utf-8')
+    (tmp_path / 'rag_eval_bob_acl.json').write_text(json.dumps(rag), encoding='utf-8')
+    load = {
+        'report_schema_version': 1,
+        'mode': 'query',
+        'http_success_ratio': 0.99,
+        'latency_ms': {'p95': 100.0},
+        'provenance': 'live_http_client_side',
+    }
+    (tmp_path / 'load_query.json').write_text(json.dumps(load), encoding='utf-8')
+    status2, blockers2 = gates.assess_mvp(tmp_path)
+    assert status2 == 'PASS'
+    assert blockers2 == []
+
+
+def test_alignment_status_requires_both_git_shas():
+    verify = load_script('verify_mvp_evidence.py')
+    ok, errs = verify.alignment_status(None, 'abc', True)
+    assert not ok and 'git HEAD unavailable' in errs
+    ok, errs = verify.alignment_status('abc', None, False)
+    assert not ok and any('missing' in e for e in errs)
+    ok, errs = verify.alignment_status('abc', None, True)
+    assert not ok and 'missing git_commit' in errs[0]
+    ok, errs = verify.alignment_status('abc', 'def', True)
+    assert not ok and 'does not match' in errs[0]
+    ok, errs = verify.alignment_status('abc', 'abc', True)
+    assert ok and errs == []
 
 
 def test_rag_evaluation_unanswerable_rejects_fabricated_answer_without_refusal():

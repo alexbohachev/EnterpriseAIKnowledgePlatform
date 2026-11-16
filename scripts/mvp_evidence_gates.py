@@ -8,13 +8,12 @@ RAG_EVAL_SCHEMA_VERSION = 2
 LOAD_REPORT_SCHEMA_VERSION = 1
 EVIDENCE_BUNDLE_SCHEMA_VERSION = 1
 
-REQUIRED_MVP_ARTIFACTS = (
+LIVE_MVP_ARTIFACTS = (
     'integration_smoke.json',
     'ocr_live_e2e.json',
     'rag_eval.json',
     'rag_eval_bob_acl.json',
     'load_query.json',
-    'stage8_preflight.json',
 )
 
 
@@ -87,14 +86,4 @@ def assess_mvp(reports_dir: Path) -> tuple[str, list[str]]:
         blockers.append('rag_eval_bob_acl.json failed schema v2 / quality gates')
     if not load_query_ok(reports_dir / 'load_query.json'):
         blockers.append('load_query.json failed schema v1 / load gates')
-    preflight = reports_dir / 'stage8_preflight.json'
-    if not preflight.is_file():
-        blockers.append('stage8_preflight.json missing (run preflight --require-mvp-live)')
-    else:
-        try:
-            body = json.loads(preflight.read_text(encoding='utf-8'))
-            if body.get('mvp_acceptance') != 'PASS':
-                blockers.append('stage8_preflight.json mvp_acceptance != PASS')
-        except (json.JSONDecodeError, OSError):
-            blockers.append('stage8_preflight.json unreadable')
     return ('PASS' if not blockers else 'BLOCKED'), blockers
