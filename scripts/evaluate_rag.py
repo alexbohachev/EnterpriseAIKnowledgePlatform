@@ -51,7 +51,8 @@ def score_abstention(row: dict, case: dict, response: dict, answer: str) -> None
             'cannot confirm', 'не знайден',
         ]
         refusal = any(m.casefold() in answer.casefold() for m in markers)
-        row['grounded_refusal_pass'] = grounded and (refusal or not citations)
+        row['refusal_language_pass'] = refusal
+        row['grounded_refusal_pass'] = grounded and refusal
         row['abstention_pass'] = row['grounded_refusal_pass']
 
 

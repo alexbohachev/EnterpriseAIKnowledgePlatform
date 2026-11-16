@@ -109,7 +109,7 @@ def test_rag_evaluation_uses_only_explicit_ground_truth_not_guessing():
     assert data['citation_label_validity'] == 1
     assert data['quality_failures'] == 0
     assert data['quality_pass_rate'] == 1
-    assert 'Not an automated' in data['limitations']
+    assert 'human factuality review' in data['limitations']
 
 
 def test_rag_evaluation_unanswerable_allows_retrieval_without_empty_violation():
@@ -123,6 +123,17 @@ def test_rag_evaluation_unanswerable_allows_retrieval_without_empty_violation():
     })
     assert data['quality_failures'] == 0
     assert data['eval_schema_version'] == 2
+
+
+def test_rag_evaluation_unanswerable_rejects_fabricated_answer_without_refusal():
+    script = load_script('evaluate_rag.py')
+    case = {'id': 'zebra', 'question': 'ZEBRA?', 'abstain_mode': 'unanswerable'}
+    data = script.evaluate_cases([case], lambda _: {
+        'answer': 'Project ZEBRA will launch next summer with full funding.',
+        'retrieval_count': 0,
+        'citations': [],
+    })
+    assert data['quality_failures'] == 1
 
 
 def test_rag_evaluation_acl_denied_detects_citation_leak():

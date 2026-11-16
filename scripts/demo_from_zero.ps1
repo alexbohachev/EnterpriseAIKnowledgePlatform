@@ -103,7 +103,8 @@ Invoke-External 'load_test query' 'python' @(
     '--output', 'reports/load_query.json', '--url', 'http://127.0.0.1:8000'
 )
 
-Invoke-External 'stage8 preflight' 'python' @('scripts/stage8_preflight.py')
+$env:EAKP_REQUIRE_MVP_LIVE = '1'
+Invoke-External 'stage8 preflight' 'python' @('scripts/stage8_preflight.py', '--require-mvp-live')
 Invoke-External 'open requirements register' 'python' @('scripts/open_requirements_register.py')
 
 Write-Host 'Done. See reports/ and docs/Stage8_Open_Requirements_UA.md'

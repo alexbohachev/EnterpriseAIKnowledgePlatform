@@ -54,7 +54,8 @@ export EAKP_EVAL_TOKEN="$alice_tok"
 python scripts/load_test.py --mode query --accept-real-load --seconds 20 --rps 1 \
   --output reports/load_query.json --url http://127.0.0.1:8000
 
-python scripts/stage8_preflight.py
+export EAKP_REQUIRE_MVP_LIVE=1
+python scripts/stage8_preflight.py --require-mvp-live
 python scripts/open_requirements_register.py
 
 echo "Done. Artifacts under reports/"

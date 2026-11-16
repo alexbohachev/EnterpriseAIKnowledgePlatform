@@ -21,7 +21,7 @@
 | `rag_eval_bob_acl.json` | те саме (ізоляція Bob / abstain) |
 | `load_query.json` | `report_schema_version >= 1`, `provenance == live_http_client_side`, `http_success_ratio >= 0.99`, `p95 <= 60000` |
 
-Перевірка: `python scripts/stage8_preflight.py` → поля `live_rag_eval`, `live_rag_bob_acl`, `live_load_query_report` = `PASS`.
+Перевірка: `python scripts/stage8_preflight.py --require-mvp-live` (демо вмикає це автоматично) → `mvp_acceptance: PASS` (окремо від `release_acceptance`, де лишаються OPEN scope blockers).
 
 **Розширений набір (faithfulness):** `scripts/seed_synthetic_eval_corpus.py` → `reports/eval_active_alice.jsonl` (8 кейсів) і `eval_active_bob.jsonl` (4 кейси). Поля: `must_not_include`, `require_citation_marks`, `min_citations`. Див. `examples/EVAL_DATASETS_UA.md`.
 
