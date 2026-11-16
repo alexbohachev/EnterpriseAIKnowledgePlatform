@@ -20,7 +20,10 @@ $paths = @(
   'examples\eval_live_synthetic.jsonl',
   'examples\eval_live_bob_acl.jsonl',
   'docs\Stage8_OTUS_Demo_Script_UA.md',
-  'docs\Stage8_Acceptance_Gap_Analysis_UA.md'
+  'docs\Stage8_Acceptance_Gap_Analysis_UA.md',
+  'docs\Stage8_Submission_Checklist_UA.md',
+  'docs\Stage8_Defense_Speech_Addendum_UA.md',
+  'presentation\EAKP_OTUS_Defense_UA.pdf'
 )
 foreach ($rel in $paths) {
   $src = Join-Path $root $rel
