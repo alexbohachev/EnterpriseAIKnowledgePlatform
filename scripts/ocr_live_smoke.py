@@ -27,7 +27,9 @@ def scanned_fixture() -> bytes:
         '/usr/share/fonts/truetype/liberation2/LiberationSans-Regular.ttf',
         ) if Path(p).is_file()), None)
     font = ImageFont.truetype(font_path, 52) if font_path else ImageFont.load_default()
-    ImageDraw.Draw(im).text((50,150), 'PROJECT ORION. Launch date 12 June 2032.',
+    ImageDraw.Draw(im).text((50, 120), 'PROJECT ORION-OCR-ACCEPTANCE ONLY.',
+                             font=font, fill='black')
+    ImageDraw.Draw(im).text((50, 200), 'Launch date 12 June 2032.',
                              font=font, fill='black')
     buff = BytesIO()
     pdf = Canvas(buff, pagesize=(650,260))
@@ -65,10 +67,21 @@ def run(base_url: str, email: str, pwd: str, wait_seconds=240):
             time.sleep(3)
         if last != 'INDEXED':
             raise RuntimeError('OCR/indexing timeout; last status: '+str(last))
-        answer = _must(client.post('/api/v1/query', headers=auth,
-              json={'question':'What is the launch date of Project ORION?'}),200)
-        if up['document_id'] not in {c['document_id'] for c in answer.get('citations', [])}:
-            raise RuntimeError('OCR document not cited in query')
+        question = 'What is the launch date of Project ORION-OCR-ACCEPTANCE ONLY?'
+        doc_id = up['document_id']
+        cited = False
+        for attempt in range(5):
+            if attempt:
+                time.sleep(2)
+            answer = _must(client.post('/api/v1/query', headers=auth,
+                  json={'question': question}), 200)
+            if doc_id in {c['document_id'] for c in answer.get('citations', [])}:
+                cited = True
+                break
+        if not cited:
+            raise RuntimeError(
+                f'OCR document {doc_id} not cited; citations={answer.get("citations", [])}'
+            )
         evidence.append('scanned_document_has_citation:passed')
     return {'scenario':'real_local_ocr_e2e','passed':True,'events':evidence,
             'generated_utc':datetime.now(timezone.utc).isoformat(),

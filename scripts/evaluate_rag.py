@@ -49,7 +49,8 @@ def score_abstention(row: dict, case: dict, response: dict, answer: str) -> None
         grounded = all(frag.casefold() not in answer.casefold() for frag in (case.get('must_not_include') or []))
         markers = case.get('refusal_markers') or [
             'немає', 'немає підтвердженої', 'no confirmed', 'not found', 'no information',
-            'cannot confirm', 'не знайден',
+            'cannot confirm', 'не знайден', 'do not provide', 'does not provide',
+            'not provide any information', 'excerpts do not',
         ]
         refusal = any(m.casefold() in answer.casefold() for m in markers)
         row['refusal_language_pass'] = refusal
@@ -94,7 +95,12 @@ def case_quality_pass(row: dict, case: dict) -> bool:
     return True
 
 
-def evaluate_cases(cases: list[dict], ask, case_delay_s: float = 0.0) -> dict:
+def evaluate_cases(
+    cases: list[dict],
+    ask,
+    case_delay_s: float = 0.0,
+    http_retries: int = 3,
+) -> dict:
     stats = Counter()
     rows = []
     for i, case in enumerate(cases, 1):
@@ -105,7 +111,17 @@ def evaluate_cases(cases: list[dict], ask, case_delay_s: float = 0.0) -> dict:
         required = list(case.get('must_include', []))
         row = {'id': case_id}
         try:
-            response = ask(case['question'])
+            response = None
+            for attempt in range(max(1, http_retries)):
+                response = ask(case['question'])
+                if not isinstance(response, httpx.Response):
+                    break
+                if response.status_code == 200:
+                    break
+                if response.status_code == 502 and attempt + 1 < http_retries:
+                    time.sleep(max(case_delay_s, 3.0))
+                    continue
+                break
             if isinstance(response, httpx.Response):
                 if response.status_code != 200:
                     row['status'] = 'http_error'
@@ -192,6 +208,7 @@ def main():
     p.add_argument('--timeout', type=float, default=180)
     p.add_argument('--min-quality-pass-rate', type=float, default=1.0)
     p.add_argument('--case-delay', type=float, default=2.0, help='Pause between live queries (Ollama stability)')
+    p.add_argument('--http-retries', type=int, default=3, help='Retries for transient HTTP 502 from local LLM')
     args = p.parse_args()
     token = os.getenv('EAKP_EVAL_TOKEN')
     if not token:
@@ -200,7 +217,9 @@ def main():
     with httpx.Client(base_url=args.url, timeout=args.timeout, trust_env=False) as client:
         def ask(question):
             return client.post('/api/v1/query', headers={'Authorization': f'Bearer {token}'}, json={'question': question})
-        result = evaluate_cases(cases, ask, case_delay_s=args.case_delay)
+        result = evaluate_cases(
+            cases, ask, case_delay_s=args.case_delay, http_retries=args.http_retries
+        )
     result['generated_utc'] = datetime.now(timezone.utc).isoformat()
     result['runtime'] = 'live_http'
     dest = Path(args.output)
