@@ -2,7 +2,7 @@
 
 **Цей пакет розширює Stage 7. Він НЕ є підтверджено прийнятим Production-продуктом.**
 
-Додано локальний OCR сканованих PDF; HTTP/SQLite/GraphRAG перевіряється зі штучними адаптерами, а **live Docker E2E/OCR/RAG/load** задокументовані в `docs/Stage8_Submission_Checklist_UA.md` і релізі [`stage8-live-evidence-2026-11-16`](https://github.com/alexbohachev/EnterpriseAIKnowledgePlatform/releases/tag/stage8-live-evidence-2026-11-16). Air-gap, семантичний граф, multimodal і GPU-benchmark лишаються OPEN.
+Додано локальний OCR сканованих PDF; CI на `master` — pytest (SQLite/fakes). **Live-докази** генеруються локально в `reports/` (не в git) і пакуються в ZIP після `demo_from_zero` + `publish_stage8_evidence.ps1`. Реліз [`stage8-submission-2026-11-17`](https://github.com/alexbohachev/EnterpriseAIKnowledgePlatform/releases/tag/stage8-submission-2026-11-17): **ZIP на момент клону репо може бути застарілим** — див. чекліст. Старий bundle: `stage8-live-evidence-2026-11-16`.
 
 Основний план і обмеження: `docs/Stage8_Acceptance_Gap_Analysis_UA.md`.  
 Зібрати локальні докази: `python scripts/stage8_preflight.py`.  
@@ -23,9 +23,11 @@ chmod +x scripts/demo_from_zero.sh
 ./scripts/demo_from_zero.sh
 ```
 
-Паролі тестових користувачів: `scripts/demo_env.example` (не для production).  
-Набори eval: `examples/EVAL_DATASETS_UA.md`.  
-**OPEN** (semantic graph, multimodal, air-gap audit, GPU): `docs/Stage8_Open_Requirements_UA.md` + `reports/open_requirements_register.json`.
+Паролі: `scripts/demo_env.example`. Eval: `examples/EVAL_DATASETS_UA.md`.  
+Після демо: `py -3 scripts/publish_stage8_evidence.ps1` (verify → bundle → GitHub Release).
+
+**OPEN** (semantic graph, multimodal, air-gap, GPU, pentest, відео): `docs/Stage8_Open_Requirements_UA.md`.  
+Машиночитний реєстр **не в git** — `reports/open_requirements_register.json` (створює `demo_from_zero` або `scripts/open_requirements_register.py`). Зразок: `examples/stage8_open_requirements_register.example.json`.
 
 # Enterprise AI Knowledge Platform — OTUS Architect AI/ML
 

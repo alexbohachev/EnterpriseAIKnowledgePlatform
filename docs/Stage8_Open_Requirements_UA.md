@@ -1,6 +1,6 @@
 # Stage 8 — реєстр OPEN-вимог (не заявляти без доказів)
 
-Ці пункти **свідомо залишені поза MVP** Stage 8. Скрипт `scripts/open_requirements_register.py` записує `reports/open_requirements_register.json` зі статусом `NOT_EXECUTED`.
+Ці пункти **свідомо залишені поза MVP** Stage 8. Скрипт `scripts/open_requirements_register.py` (або `demo_from_zero`) записує **`reports/open_requirements_register.json`** — каталог `reports/` у `.gitignore`, у репо лише зразок: `examples/stage8_open_requirements_register.example.json`.
 
 ## Semantic graph {#semantic-graph}
 

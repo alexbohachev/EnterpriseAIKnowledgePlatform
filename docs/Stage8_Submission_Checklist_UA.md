@@ -57,16 +57,23 @@ python scripts/evaluate_rag.py --dataset reports/eval_active_bob.jsonl --output 
 - [ ] Записане 5–7 хв демо-відео з прихованими секретами
 - [ ] Підпис викладача / формальний ACCEPTED
 
-## Перед завантаженням у OTUS
-1. `powershell -File scripts\demo_from_zero.ps1` — свіжі `reports/` + `mvp_acceptance: PASS`
-2. `python scripts/verify_mvp_evidence.py` — код і звіти узгоджені (`git_head` = `preflight_git_commit`)
-3. `powershell -File scripts\bundle_stage8_evidence.ps1` — **без** `-AllowStaleEvidence`
-4. Завантажити ZIP на Release з тим самим `git_commit`, що в manifest (див. `docs/Stage8_Evidence_Rebuild_UA.md`)
+## Обов’язково перед подачею (live, не лише CI)
 
-**Застереження:** поточний ZIP на `stage8-submission-2026-11-17` застарів відносно `96cfae3+` — перезібрати після демо.
+- [ ] `git pull` на `master` (напр. `c1f69c2+`), CI green
+- [ ] `powershell -File scripts\demo_from_zero.ps1` → `reports/stage8_preflight.json` **`mvp_acceptance: PASS`**
+- [ ] `git_commit` у preflight = `git rev-parse HEAD`
+- [ ] `py -3 scripts/verify_mvp_evidence.py` → exit 0
+- [ ] `powershell -File scripts\publish_stage8_evidence.ps1` → оновити ZIP на релізі `stage8-submission-2026-11-17`
+- [ ] У manifest у ZIP той самий SHA, що код; у README/листі — **не** посилатися на застарілий ZIP
 
-5. Додати презентацію на Release: `presentation/EAKP_OTUS_Defense_Stage8_UA.pptx` (+ PDF)
-6. Перевірити, що в архіві **немає** `.env`, `.secrets/`, реальних PDF
-7. У захисті проговорити addendum: `docs/Stage8_Defense_Speech_Addendum_UA.md`
+**Зараз на GitHub:** ZIP релізу `stage8-submission-2026-11-17` **застарілий** (зібраний до eval v2 / MVP gates) — пункти вище обов’язкові.
+
+Детально: `docs/Stage8_Evidence_Rebuild_UA.md`.
+
+## Перед завантаженням у OTUS (матеріали)
+1. Перевірити ZIP: немає `.env`, `.secrets/`, production PDF
+2. Презентація: `presentation/EAKP_OTUS_Defense_Stage8_UA.pptx` на Release
+3. Лист: `docs/Stage8_OTUS_Submission_Cover_Letter_UA.md`
+4. Addendum захисту: `docs/Stage8_Defense_Speech_Addendum_UA.md`
 
 **Висновок:** Stage 8 — інженерний MVP з документованими live-доказами на синтетичному стенді; **не** production-ready і **не** повна техприйомка OTUS.

@@ -1,0 +1,32 @@
+{
+  "generated_utc": "EXAMPLE_ONLY_NOT_LIVE_RUN",
+  "register": "Stage8_OPEN_requirements",
+  "items": [
+    {
+      "id": "semantic-knowledge-graph",
+      "status": "NOT_EXECUTED",
+      "scope": "Typed semantic relations beyond lexical GraphRAG-lite",
+      "doc": "docs/Stage8_Open_Requirements_UA.md#semantic-graph"
+    },
+    {
+      "id": "multimodal-drawings-tables",
+      "status": "NOT_EXECUTED",
+      "scope": "Engineering drawings and complex tables (OCR text-only today)",
+      "doc": "docs/Stage8_Open_Requirements_UA.md#multimodal"
+    },
+    {
+      "id": "air-gap-audit",
+      "status": "NOT_EXECUTED",
+      "scope": "Host egress, DNS, image provenance",
+      "doc": "docs/Stage8_Open_Requirements_UA.md#air-gap"
+    },
+    {
+      "id": "gpu-inference-benchmark",
+      "status": "NOT_EXECUTED",
+      "scope": "GPU tokens/s, TTFT, VRAM",
+      "doc": "docs/Stage8_Open_Requirements_UA.md#gpu-benchmark"
+    }
+  ],
+  "acceptance": "BLOCKED",
+  "note": "Committed example only. Live file: reports/open_requirements_register.json via demo_from_zero or open_requirements_register.py"
+}
