@@ -59,9 +59,9 @@ python scripts/evaluate_rag.py --dataset reports/eval_active_bob.jsonl --output 
 
 ## Обов’язково перед подачею (live, не лише CI)
 
-- [x] `git pull` на `master` (`969f525`+), CI green
+- [x] `git pull` на `master` (`160ebd7`+), CI green
 - [x] Live-прогін (демо) → `reports/stage8_preflight.json` **`mvp_acceptance: PASS`**
-- [x] `git_commit` у preflight = `git rev-parse HEAD` (`969f5251e3f1eb15ad3906df3d0bc165d60f1f6b`)
+- [x] `git_commit` у preflight = `git rev-parse HEAD` (`160ebd753c24ad6cfe10978c5b21f81f7b9dc79a`)
 - [x] `py -3 scripts/verify_mvp_evidence.py` → exit 0
 - [x] `publish_stage8_evidence.ps1` → реліз `stage8-submission-2026-11-17`: **`EAKP_Stage8_Live_Evidence_2026-11-19.zip`**
 - [ ] Повторити ланцюг після **будь-яких** змін коду, що впливають на smoke/eval
