@@ -71,7 +71,7 @@ python scripts/evaluate_rag.py --dataset reports/eval_active_bob.jsonl --output 
 ## Перед завантаженням у OTUS (матеріали)
 1. Перевірити ZIP: немає `.env`, `.secrets/`, production PDF
 2. Презентація: `presentation/EAKP_OTUS_Defense_Stage8_UA.pptx` на Release
-3. Лист: `docs/Stage8_OTUS_Submission_Cover_Letter_UA.md`
-4. Addendum захисту: `docs/Stage8_Defense_Speech_Addendum_UA.md`
+3. Лист: `docs/Stage8_OTUS_Submission_Cover_Letter_Ready_UA.md` (шаблон: `Stage8_OTUS_Submission_Cover_Letter_UA.md`)
+4. Захист 5 хв: `docs/Stage8_Defense_5min_UA.md`; addendum: `docs/Stage8_Defense_Speech_Addendum_UA.md`
 
 **Висновок:** Stage 8 — інженерний MVP з документованими live-доказами на синтетичному стенді; **не** production-ready і **не** повна техприйомка OTUS.

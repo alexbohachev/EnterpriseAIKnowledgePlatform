@@ -13,9 +13,9 @@ EAKP · OTUS AI/ML Architect · MVP Candidate
 Захищений пошук корпоративних знань
 із GraphRAG та контрольованими цитатами
 
-Stage 7 · кандидат
+Stage 8 · MVP (live-докази)
 
-37/37 локальних тестів  •  live Docker E2E — відкрито  •  RAG p95 — не виміряно
+49 passed pytest (3 skip)  •  mvp_acceptance: PASS  •  query p95 — клієнтський, не GPU
 
 
 ## Слайд 2: Slide 2
@@ -138,15 +138,15 @@ EAKP · OTUS AI/ML Architect · MVP Candidate
 
 6
 
-37 / 37
+49 passed (+3 skip)
 
-Модульні та API-тести
+Модульні та API-тести (SQLite/fakes + OCR skip на хості)
 
-OPEN
+PASS (synthetic)
 
-Docker/LLM E2E
+Live Docker E2E + OCR + RAG eval 8+4
 
-/healthz: 12/12 — це лише tiny HTTP diagnostic, не GraphRAG benchmark.
+mvp_acceptance: PASS у ZIP; release_acceptance: BLOCKED (OPEN scope).
 
 
 ## Слайд 7: Slide 7
@@ -159,11 +159,11 @@ EAKP · OTUS AI/ML Architect · MVP Candidate
 
 7
 
-Немає OCR, аналізу креслень або складних таблиць.
+OCR — лише текст зі скану (Tesseract); креслення/VLM і складні таблиці — OPEN.
 
-GraphRAG-lite: лексичні сутності, без типізованих відношень.
+GraphRAG-lite: лексичні сутності, без типізованого semantic KG.
 
-Немає реального p95/RPS, GPU sizing і доведеного air-gap.
+Немає formal GPU tokens/s, air-gap audit і pen-test; load_query — клієнтський HTTP.
 
 Guardrails — евристичні; penetration test не проводили.
 
@@ -180,11 +180,11 @@ EAKP · OTUS AI/ML Architect · MVP Candidate
 
 8
 
-G1–G2: Docker E2E та ACL A/B/revoke на живих сервісах.
+G1–G2: закрито на синтетиці (smoke + ACL + OCR live).
 
-G3–G4: Grafana/Jaeger + реальна RAG-eval і людська фактперевірка.
+G3–G4: Grafana/Jaeger + RAG eval v2 (faithfulness); людський red team — OPEN.
 
-G5–G6: LLM query benchmark, air-gap/red team, OCR/GraphRAG scope.
+G5–G6: GPU inference bench, air-gap/red team, semantic KG / multimodal.
 
 Цінність: керована довіра до знань, а не «LLM відповідає на все».
 
@@ -193,8 +193,8 @@ G5–G6: LLM query benchmark, air-gap/red team, OCR/GraphRAG scope.
 
 • Docker E2E + integration_probe: overall_ok
 • integration_smoke + OCR live E2E (синтетичні PDF)
-• RAG eval: recall 1.0; Bob ACL abstention 1.0
-• Query load (клієнт): p50 ~2.7s, p95 ~11.5s — не GPU
+• RAG eval v2: quality 1.0, faithfulness 1.0; Bob ACL 4/4
+• Query load (клієнт): p95 у межі gate — не GPU tokens/s
 • Monitoring: Grafana / Prometheus / Jaeger
 • release_acceptance: BLOCKED (air-gap, GPU, pen-test)
 
