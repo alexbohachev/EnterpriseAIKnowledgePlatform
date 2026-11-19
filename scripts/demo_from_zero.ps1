@@ -106,7 +106,8 @@ $tokenResp = Invoke-RestMethod -Method Post -Uri 'http://127.0.0.1:8000/api/v1/a
     -ContentType 'application/json' -Body (@{email='alice@test.local';password=$alicePw} | ConvertTo-Json)
 $env:EAKP_EVAL_TOKEN = $tokenResp.access_token
 Invoke-Python 'evaluate_rag Alice' @(
-    'scripts/evaluate_rag.py', '--dataset', 'reports/eval_active_alice.jsonl', '--output', 'reports/rag_eval.json'
+    'scripts/evaluate_rag.py', '--dataset', 'reports/eval_active_alice.jsonl', '--output', 'reports/rag_eval.json',
+    '--case-delay', '5', '--http-retries', '4'
 )
 
 Write-Host '==> RAG evaluation (Bob ACL)'
@@ -114,7 +115,8 @@ $tokenBob = (Invoke-RestMethod -Method Post -Uri 'http://127.0.0.1:8000/api/v1/a
     -ContentType 'application/json' -Body (@{email='bob@test.local';password=$bobPw} | ConvertTo-Json)).access_token
 $env:EAKP_EVAL_TOKEN = $tokenBob
 Invoke-Python 'evaluate_rag Bob' @(
-    'scripts/evaluate_rag.py', '--dataset', 'reports/eval_active_bob.jsonl', '--output', 'reports/rag_eval_bob_acl.json'
+    'scripts/evaluate_rag.py', '--dataset', 'reports/eval_active_bob.jsonl', '--output', 'reports/rag_eval_bob_acl.json',
+    '--case-delay', '5', '--http-retries', '4'
 )
 
 Write-Host '==> query load (client-side)'

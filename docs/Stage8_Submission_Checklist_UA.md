@@ -10,7 +10,7 @@
 - [x] GitHub Actions: `.github/workflows/ci.yml` — `pytest` на push/PR
 - [x] Graph retrieve: злиття вектор+граф (`_merge_retrieval_ids`), ACL до cap документів
 - [x] Indexer: відновлення прострочених `INDEXING` (lease 30 хв)
-- [ ] Локально перепрогнати `python -m pytest -q` перед push (у CI — обов’язково)
+- [x] CI green на `master` після `7fb553d` (локальний pytest — за бажанням перед змінами)
 
 ## Quality gates для live-звітів (`reports/`)
 Після змін у `scripts/evaluate_rag.py` і `scripts/stage8_preflight.py` артефакти мають проходити **автоматичні пороги**, інакше preflight лишає `release_acceptance: BLOCKED`.
@@ -59,16 +59,14 @@ python scripts/evaluate_rag.py --dataset reports/eval_active_bob.jsonl --output 
 
 ## Обов’язково перед подачею (live, не лише CI)
 
-- [ ] `git pull` на `master` (напр. `c1f69c2+`), CI green
-- [ ] `powershell -File scripts\demo_from_zero.ps1` → `reports/stage8_preflight.json` **`mvp_acceptance: PASS`**
-- [ ] `git_commit` у preflight = `git rev-parse HEAD`
-- [ ] `py -3 scripts/verify_mvp_evidence.py` → exit 0
-- [ ] `powershell -File scripts\publish_stage8_evidence.ps1` → оновити ZIP на релізі `stage8-submission-2026-11-17`
-- [ ] У manifest у ZIP той самий SHA, що код; у README/листі — **не** посилатися на застарілий ZIP
+- [x] `git pull` на `master` (`7fb553d`+), CI green
+- [x] Live-прогін (демо) → `reports/stage8_preflight.json` **`mvp_acceptance: PASS`**
+- [x] `git_commit` у preflight = `git rev-parse HEAD` (`7fb553d219c451e9000d974fb339dab15014556c`)
+- [x] `py -3 scripts/verify_mvp_evidence.py` → exit 0
+- [x] `publish_stage8_evidence.ps1` → реліз `stage8-submission-2026-11-17`: **`EAKP_Stage8_Live_Evidence_2026-11-17.zip`**
+- [ ] Повторити ланцюг після **будь-яких** змін коду, що впливають на smoke/eval
 
-**Зараз на GitHub:** ZIP релізу `stage8-submission-2026-11-17` **застарілий** (зібраний до eval v2 / MVP gates) — пункти вище обов’язкові.
-
-Детально: `docs/Stage8_Evidence_Rebuild_UA.md`.
+Детально: `docs/Stage8_Evidence_Rebuild_UA.md`. One-liner для портфоліо: `docs/Stage8_Portfolio_Blurb_UA.md`.
 
 ## Перед завантаженням у OTUS (матеріали)
 1. Перевірити ZIP: немає `.env`, `.secrets/`, production PDF

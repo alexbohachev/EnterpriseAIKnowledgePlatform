@@ -42,13 +42,13 @@ alice_tok="$(curl -fsS -H 'Content-Type: application/json' \
   -d "{\"email\":\"alice@test.local\",\"password\":\"$EAKP_TEST_ALICE_PASSWORD\"}" \
   http://127.0.0.1:8000/api/v1/auth/token | python -c 'import json,sys; print(json.load(sys.stdin)["access_token"])')"
 export EAKP_EVAL_TOKEN="$alice_tok"
-python scripts/evaluate_rag.py --dataset reports/eval_active_alice.jsonl --output reports/rag_eval.json
+python scripts/evaluate_rag.py --dataset reports/eval_active_alice.jsonl --output reports/rag_eval.json --case-delay 5 --http-retries 4
 
 bob_tok="$(curl -fsS -H 'Content-Type: application/json' \
   -d "{\"email\":\"bob@test.local\",\"password\":\"$EAKP_TEST_BOB_PASSWORD\"}" \
   http://127.0.0.1:8000/api/v1/auth/token | python -c 'import json,sys; print(json.load(sys.stdin)["access_token"])')"
 export EAKP_EVAL_TOKEN="$bob_tok"
-python scripts/evaluate_rag.py --dataset reports/eval_active_bob.jsonl --output reports/rag_eval_bob_acl.json
+python scripts/evaluate_rag.py --dataset reports/eval_active_bob.jsonl --output reports/rag_eval_bob_acl.json --case-delay 5 --http-retries 4
 
 export EAKP_EVAL_TOKEN="$alice_tok"
 python scripts/load_test.py --mode query --accept-real-load --seconds 20 --rps 1 \
