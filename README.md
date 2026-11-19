@@ -4,7 +4,7 @@
 
 **Цей пакет розширює Stage 7. Він НЕ є підтверджено прийнятим Production-продуктом.**
 
-Додано локальний OCR сканованих PDF; CI на `master` — pytest (SQLite/fakes). **Live-докази** генеруються локально в `reports/` (не в git) і пакуються в ZIP після `demo_from_zero` + `publish_stage8_evidence.ps1`. Викладка OTUS: реліз [`stage8-submission-2026-11-17`](https://github.com/alexbohachev/EnterpriseAIKnowledgePlatform/releases/tag/stage8-submission-2026-11-17) — актуальний bundle **`EAKP_Stage8_Live_Evidence_2026-11-17.zip`**, `git_commit` **`7fb553d`** (`mvp_acceptance: PASS` у manifest/preflight). Перезбірка після змін коду: `docs/Stage8_Evidence_Rebuild_UA.md`.
+Додано локальний OCR сканованих PDF; CI на `master` — pytest (SQLite/fakes). **Live-докази** генеруються локально в `reports/` (не в git) і пакуються в ZIP після `demo_from_zero` + `publish_stage8_evidence.ps1`. Викладка OTUS: реліз [`stage8-submission-2026-11-17`](https://github.com/alexbohachev/EnterpriseAIKnowledgePlatform/releases/tag/stage8-submission-2026-11-17) — актуальний bundle **`EAKP_Stage8_Live_Evidence_2026-11-19.zip`**, `git_commit` **`969f525`** (`mvp_acceptance: PASS` у manifest/preflight). Перезбірка після змін коду: `docs/Stage8_Evidence_Rebuild_UA.md`.
 
 Основний план і обмеження: `docs/Stage8_Acceptance_Gap_Analysis_UA.md`.  
 Зібрати локальні докази: `python scripts/stage8_preflight.py`.  
